@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexCYR — Command Center</title>
+  <link rel="stylesheet" href="/static/css/nexcyr.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- brand -->
+    <div class="brand">
+      <div class="logo">N</div>
+      <div>
+        <div class="name">NEXCYR</div>
+        <div class="ver">v1.0.0</div>
+      </div>
+    </div>
+
+    <!-- topbar -->
+    <div class="topbar">
+      <div class="title" id="topTitle">Command Center <small id="topSub"></small></div>
+      <div class="searchbox">
+        <span class="ico">⌕</span>
+        <input id="globalSearch" type="text" placeholder="Global search — assessments, targets, findings, events…" autocomplete="off" />
+        <div class="search-results" id="searchResults"></div>
+      </div>
+      <div class="status-chip" id="aiChip" title="NexCYR Intelligence engine status">
+        <span class="dot" id="aiDot"></span><span id="aiChipText">AI</span>
+      </div>
+      <div class="status-chip" id="opChip"><span class="dot"></span><span id="opName">operator</span></div>
+    </div>
+
+    <!-- sidebar -->
+    <nav class="sidebar" id="sidebar">
+      <div class="nav-group-label">Overview</div>
+      <a class="nav-item" data-view="dashboard"><span class="ni">▦</span>Dashboard</a>
+
+      <div class="nav-group-label">Assessment</div>
+      <a class="nav-item" data-view="assessments"><span class="ni">◈</span>Assessments</a>
+      <a class="nav-item" data-view="targets"><span class="ni">◎</span>Authorized Targets</a>
+      <a class="nav-item" data-view="scans"><span class="ni">▤</span>Scans</a>
+      <a class="nav-item" data-view="recon"><span class="ni">⌖</span>Reconnaissance</a>
+      <a class="nav-item" data-view="findings"><span class="ni">⚠</span>Findings</a>
+
+      <div class="nav-group-label">Monitoring</div>
+      <a class="nav-item" data-view="soc"><span class="ni">◉</span>SOC Monitoring</a>
+      <a class="nav-item" data-view="attackmap"><span class="ni">✦</span>Cyber Attack Map</a>
+      <a class="nav-item" data-view="purple"><span class="ni">⬡</span>Purple Team</a>
+      <a class="nav-item" data-view="wifi"><span class="ni">📶</span>Wi-Fi Security</a>
+
+      <div class="nav-group-label">Hybrid Cloud</div>
+      <a class="nav-item" data-view="agents"><span class="ni">⬢</span>NexCYR Agents</a>
+
+      <div class="nav-group-label">Intelligence</div>
+      <a class="nav-item" data-view="ai"><span class="ni">✧</span>NexCYR Intelligence</a>
+
+      <div class="nav-group-label">Output</div>
+      <a class="nav-item" data-view="reports"><span class="ni">▧</span>Reports</a>
+      <a class="nav-item" data-view="settings"><span class="ni">⚙</span>Settings</a>
+
+      <div class="foot">
+        NexCYR — Unified Cybersecurity<br />Assessment &amp; Purple Team Platform.<br />
+        Authorized use only.
+      </div>
+    </nav>
+
+    <!-- main -->
+    <main class="main" id="view"></main>
+  </div>
+
+  <!-- modal -->
+  <div class="modal-back" id="modalBack">
+    <div class="modal">
+      <div class="m-head"><h3 id="modalTitle">Modal</h3><button class="x" id="modalClose">×</button></div>
+      <div class="m-body" id="modalBody"></div>
+      <div class="m-foot" id="modalFoot"></div>
+    </div>
+  </div>
+
+  <!-- toasts + map tooltip -->
+  <div class="toasts" id="toasts"></div>
+  <div class="map-tip" id="mapTip"></div>
+
+  <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

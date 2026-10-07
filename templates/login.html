@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexCYR — Access</title>
+  <link rel="stylesheet" href="/static/css/login.css" />
+</head>
+<body>
+  <main class="card">
+    <div class="logo">N</div>
+    <h1>NEXCYR</h1>
+    <div class="sub">Unified Cybersecurity Command Center</div>
+
+    <form id="loginForm" autocomplete="off">
+      <div class="field">
+        <label for="operator">Operator ID</label>
+        <input id="operator" name="operator" type="text" placeholder="e.g. analyst-01" required />
+      </div>
+      <div class="field">
+        <label for="passcode">Access Passcode</label>
+        <input id="passcode" name="passcode" type="password" placeholder="••••••••" required />
+      </div>
+      <button class="btn" type="submit">Initialize Session</button>
+      <div class="err" id="err"></div>
+    </form>
+
+    <p class="note">
+      Authorized-personnel access only. Scanning and reconnaissance are gated
+      behind explicit target authorization. <b>AI is a feature of NexCYR</b> — it
+      never replaces the assessment workflow.
+    </p>
+  </main>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const err = document.getElementById("err");
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const operator = document.getElementById("operator").value.trim();
+      const passcode = document.getElementById("passcode").value;
+      if (!operator || !passcode) {
+        err.textContent = "Operator ID and passcode are required.";
+        return;
+      }
+      try {
+        sessionStorage.setItem("nexcyr.operator", operator);
+      } catch (_) { /* storage may be unavailable */ }
+      window.location.href = "/boot";
+    });
+  </script>
+</body>
+</html>

@@ -216,3 +216,18 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- NexCYR ---
+# Local SQLite databases (never commit live/backup data)
+nexcyr.db
+nexcyr_backup.db
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+# Generated PDF reports (regenerated on demand from stored data)
+reports/
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/

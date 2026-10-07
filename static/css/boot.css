@@ -1,0 +1,130 @@
+/* ============================================================
+   NexCYR — Boot screen + Cyber DNA Core
+   ============================================================ */
+
+:root {
+  --cyan: #22e0ff;
+  --blue: #3b82f6;
+  --violet: #8b5cf6;
+  --magenta: #e11d8f;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: #04050a;
+  color: #dbe6f5;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  overflow: hidden;
+}
+
+.boot {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background:
+    radial-gradient(1000px 700px at 50% 32%, rgba(59,130,246,0.14), transparent 62%),
+    radial-gradient(800px 600px at 50% 90%, rgba(139,92,246,0.14), transparent 60%),
+    #04050a;
+  gap: 8px;
+  transition: opacity 0.7s ease;
+}
+.boot.fade { opacity: 0; pointer-events: none; }
+
+/* subtle grid + scanlines */
+.boot::before {
+  content: ""; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(96,220,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(96,220,255,0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse at 50% 45%, #000 30%, transparent 82%);
+  pointer-events: none;
+}
+.boot::after {
+  content: ""; position: absolute; inset: 0;
+  background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.022) 0 1px, transparent 1px 3px);
+  pointer-events: none;
+  animation: bootScan 6s linear infinite;
+}
+@keyframes bootScan { from { background-position: 0 0; } to { background-position: 0 60px; } }
+
+.welcome {
+  position: relative; z-index: 3;
+  text-align: center;
+  margin-bottom: 6px;
+  animation: fadeUp 0.9s ease both;
+}
+.welcome .kicker {
+  font-size: 11px; letter-spacing: 6px; text-transform: uppercase;
+  color: #7fe9ff; opacity: 0.85;
+}
+.welcome h1 {
+  font-size: 42px; font-weight: 800; letter-spacing: 6px; margin-top: 8px;
+  background: linear-gradient(90deg, var(--cyan), #a78bfa, var(--magenta));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 0 40px rgba(34,224,255,0.25);
+}
+.welcome .tag { font-size: 12.5px; letter-spacing: 2px; color: #8ea0bb; margin-top: 8px; text-transform: uppercase; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+/* DNA core */
+.core {
+  position: relative; z-index: 3;
+  width: 230px; height: 260px;
+  margin: 14px 0;
+}
+.core canvas { width: 100%; height: 100%; display: block; }
+.core .ring {
+  position: absolute; inset: -24px; border-radius: 50%;
+  border: 1px solid rgba(34,224,255,0.14);
+  animation: ringSpin 9s linear infinite;
+}
+.core .ring.r2 { inset: -44px; border-color: rgba(139,92,246,0.12); animation-duration: 14s; animation-direction: reverse; }
+.core .ring.r3 { inset: -64px; border-color: rgba(225,29,143,0.09); animation-duration: 20s; }
+@keyframes ringSpin { to { transform: rotate(360deg); } }
+.core .halo {
+  position: absolute; inset: 30px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(34,224,255,0.18), transparent 70%);
+  filter: blur(6px);
+  animation: haloPulse 3.4s ease-in-out infinite;
+}
+@keyframes haloPulse { 0%,100% { opacity: 0.5; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
+
+/* initialization list */
+.init {
+  position: relative; z-index: 3;
+  width: min(440px, 88vw);
+  margin-top: 10px;
+}
+.init .row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 6px 4px; font-size: 12.5px;
+  color: #6b7d99; opacity: 0.35; transition: opacity 0.4s, color 0.4s;
+}
+.init .row .st { width: 15px; text-align: center; color: var(--cyan); }
+.init .row .nm { letter-spacing: 1.4px; text-transform: uppercase; font-size: 11.5px; }
+.init .row .ok { margin-left: auto; font-size: 10px; color: #22c55e; opacity: 0; transition: opacity 0.3s; }
+.init .row.active { opacity: 1; color: #cfe6ff; }
+.init .row.active .st { animation: blink 0.8s steps(2) infinite; }
+.init .row.done { opacity: 0.9; color: #8ea0bb; }
+.init .row.done .ok { opacity: 1; }
+@keyframes blink { 50% { opacity: 0.2; } }
+
+.progress {
+  position: relative; z-index: 3;
+  width: min(440px, 88vw); height: 3px; margin-top: 18px;
+  background: rgba(96,220,255,0.10); border-radius: 999px; overflow: hidden;
+}
+.progress .bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--cyan), var(--violet)); box-shadow: 0 0 12px var(--cyan); transition: width 0.4s ease; }
+
+.boot-foot {
+  position: relative; z-index: 3;
+  margin-top: 20px; font-size: 10.5px; letter-spacing: 2px; color: #4a5a72; text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot::after, .core .ring, .core .halo, .init .row.active .st { animation: none !important; }
+  .boot { transition: none; }
+}
