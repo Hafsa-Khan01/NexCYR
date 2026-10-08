@@ -5,32 +5,31 @@
 
 html, body {
   height: 100%;
-  background: #04050a; color: #dbe6f5;
+  background: #000; color: #dbe6f5;
   font-family: "Segoe UI", system-ui, sans-serif;
   overflow: hidden;
 }
 
 body {
-  background:
-    radial-gradient(900px 600px at 20% 10%, rgba(59,130,246,0.16), transparent 60%),
-    radial-gradient(900px 600px at 90% 90%, rgba(139,92,246,0.16), transparent 60%),
-    #04050a;
+  background: #000;
   display: grid; place-items: center;
 }
 body::before {
   content: ""; position: fixed; inset: 0;
-  background-image:
-    linear-gradient(rgba(96,220,255,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(96,220,255,0.05) 1px, transparent 1px);
-  background-size: 46px 46px;
-  mask-image: radial-gradient(ellipse at 50% 50%, #000 35%, transparent 85%);
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(34,224,255,0.045) 0 1px,
+    transparent 1px 4px
+  );
   pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.55;
 }
 
 .card {
   position: relative; z-index: 2;
   width: min(400px, 92vw);
-  background: rgba(12, 18, 32, 0.72);
+  background: rgba(2,3,4,0.94);
   border: 1px solid rgba(96,220,255,0.28);
   border-radius: 16px; padding: 34px 30px;
   backdrop-filter: blur(14px);
@@ -39,7 +38,7 @@ body::before {
 .card .logo {
   width: 54px; height: 54px; margin: 0 auto 14px; border-radius: 14px;
   display: grid; place-items: center; font-size: 24px; font-weight: 800; color: #22e0ff;
-  border: 1px solid rgba(96,220,255,0.4); background: rgba(4,10,20,0.7);
+  border: 1px solid rgba(96,220,255,0.4); background: #020304;
   box-shadow: 0 0 24px rgba(34,224,255,0.35);
 }
 .card h1 {
@@ -52,7 +51,7 @@ body::before {
 .field { margin-bottom: 15px; }
 .field label { display: block; font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; color: #8ea0bb; margin-bottom: 6px; }
 .field input {
-  width: 100%; background: rgba(6,10,18,0.85); border: 1px solid rgba(96,165,250,0.18);
+  width: 100%; background: #010203; border: 1px solid rgba(96,165,250,0.18);
   border-radius: 9px; padding: 11px 13px; color: #dbe6f5; font-size: 14px; outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -60,7 +59,7 @@ body::before {
 
 .btn {
   width: 100%; margin-top: 6px; padding: 12px; border-radius: 10px; border: none;
-  background: linear-gradient(135deg, rgba(34,224,255,0.28), rgba(139,92,246,0.28));
+  background: rgba(34,224,255,0.10);
   border: 1px solid #22e0ff; color: #eafcff; font-weight: 700; font-size: 13px;
   letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer;
   transition: box-shadow 0.2s, transform 0.1s;
