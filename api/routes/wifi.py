@@ -1,3 +1,5 @@
+import json
+
 """Wi-Fi security routes — safe configuration assessment only.
 
 Discovery uses the operating system's own passive WLAN information
