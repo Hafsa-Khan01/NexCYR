@@ -2211,3 +2211,10 @@ body.sidebar-open .sidebar-toggle {
     mask-image: none !important;
   }
 }
+
+
+/* FINAL EARTH-ONLY visibility tweak — nothing else changed. */
+.liquid-backdrop .earth-backdrop.real-earth {
+  opacity: 0.58;
+  filter: saturate(1.00) brightness(0.84) contrast(1.14);
+}
