@@ -1807,3 +1807,21 @@ body.sidebar-open .sidebar-toggle {
     animation: none !important;
   }
 }
+
+
+/* Final left-side Earth placement. */
+.earth-backdrop {
+  left: -10vw;
+  right: auto;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@media (max-width: 780px) {
+  .earth-backdrop {
+    left: 50%;
+    right: auto;
+    top: 52%;
+    transform: translate(-50%, -50%);
+  }
+}
