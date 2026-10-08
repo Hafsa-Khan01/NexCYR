@@ -183,14 +183,14 @@ async function dashboardView(container, ctx) {
     const hero = el("section", { class: "dashboard-hero" },
       el("div", { class: "hero-grid" },
         el("div", { class: "hero-copy" },
-          el("div", { class: "hero-kicker" }, "NEXCYR // SECURITY OPERATIONS"),
+          el("div", { class: "hero-kicker" }, "NexCYR // SECURITY OPERATIONS"),
           el("h1", {}, "Unified Cybersecurity Command Center"),
           el("p", {}, "Assess authorized assets, discover exposure, correlate SOC activity, validate detections and move findings into a measurable Purple Team workflow."),
           el("div", { class: "hero-status" },
             el("span", { class: "hero-pulse" }),
             el("span", {}, "Platform online"),
             el("span", { class: "hero-divider" }, "•"),
-            el("span", { class: "hero-mono", text: "v1.0.0" })
+            el("span", { class: "hero-mono", text: "LIVE" })
           )
         ),
         el("div", { class: "hero-actions" },
@@ -272,7 +272,8 @@ async function dashboardView(container, ctx) {
 
     const miniMap = el("div", { class: "panel map-wrap" },
       el("h3", {}, "✦ Cyber Attack Map", el("span", { class: "tag", onClick: () => ctx.navigate("attackmap"), text: "open full map", style: { cursor: "pointer", color: "var(--cyan)" } })),
-      el("canvas", { id: "dashMap", style: { width: "100%", height: "320px", display: "block", borderRadius: "9px", background: "radial-gradient(circle at 50% 40%, #080d1a, #04060c 75%)" } })
+      el("div", { class: "earth-map-bg", "aria-hidden": "true" }),
+      el("canvas", { id: "dashMap", style: { width: "100%", height: "320px", display: "block", borderRadius: "9px", background: "transparent" } })
     );
 
     const ask = askPanel(ctx, { title: "Ask NexCYR" });
@@ -941,7 +942,10 @@ async function attackMapView(container, ctx) {
       el("div", { class: "section-title", text: "Entity type" }), typeRow,
       el("div", { class: "section-title", text: "Severity" }), sevRow,
       data.has_data
-        ? el("div", { class: "map-wrap" }, canvas, detail)
+        ? el("div", { class: "map-wrap" },
+            el("div", { class: "earth-map-bg", "aria-hidden": "true" }),
+            canvas,
+            detail)
         : emptyState("NO LINKED SECURITY ACTIVITY", "Create linked targets, scans, findings and events to build the graph.")
     ));
 
