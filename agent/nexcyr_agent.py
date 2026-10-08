@@ -163,6 +163,7 @@ def wifi_snapshot() -> dict:
                 "ssid": m.group(1).strip()[:255],
                 "authentication": "Unknown",
                 "encryption": "",
+                "cipher": "",
                 "channel": "",
                 "signal": "",
                 "bssid": "",
@@ -176,6 +177,7 @@ def wifi_snapshot() -> dict:
         fields = (
             ("authentication", r"Authentication\s*:\s*(.*)$"),
             ("encryption", r"Encryption\s*:\s*(.*)$"),
+            ("cipher", r"Encryption\s*:\s*(.*)$"),
             ("channel", r"Channel\s*:\s*(.*)$"),
             ("signal", r"Signal\s*:\s*(.*)$"),
             ("bssid", r"BSSID\s+\d+\s*:\s*(.*)$"),
