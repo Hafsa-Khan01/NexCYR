@@ -2111,3 +2111,34 @@ body.sidebar-open .sidebar-toggle {
     opacity: 0.22;
   }
 }
+
+
+/* FINAL EARTH ONLY — reference-style visible night Earth on AI Fallback / Operator side. */
+.liquid-backdrop .earth-backdrop.real-earth {
+  right: -4vw;
+  left: auto;
+  top: 50%;
+  width: min(62vw, 820px);
+  height: min(62vw, 820px);
+  opacity: 0.42;
+  filter: saturate(0.92) brightness(0.72) contrast(1.18);
+  z-index: 0;
+  box-shadow:
+    inset -90px -55px 125px rgba(0,0,0,0.88),
+    inset 20px 10px 55px rgba(130,200,255,0.06),
+    0 0 85px rgba(34,224,255,0.08);
+}
+.liquid-backdrop .earth-backdrop.real-earth .earth-radar,
+.liquid-backdrop .earth-backdrop .earth-radar {
+  display: none !important;
+}
+@media (max-width: 780px) {
+  .liquid-backdrop .earth-backdrop.real-earth {
+    width: 94vmin;
+    height: 94vmin;
+    left: 58%;
+    right: auto;
+    top: 52%;
+    opacity: 0.24;
+  }
+}
