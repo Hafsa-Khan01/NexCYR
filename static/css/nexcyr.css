@@ -2218,3 +2218,16 @@ body.sidebar-open .sidebar-toggle {
   opacity: 0.58;
   filter: saturate(1.00) brightness(0.84) contrast(1.14);
 }
+
+
+/* Remove the artificial black shade from the photographic Earth only. */
+.liquid-backdrop .earth-backdrop.real-earth::after {
+  background: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+.liquid-backdrop .earth-backdrop.real-earth {
+  box-shadow:
+    inset 18px 12px 55px rgba(111,190,255,0.08),
+    0 0 85px rgba(34,224,255,0.08) !important;
+}
