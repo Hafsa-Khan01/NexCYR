@@ -67,8 +67,6 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
     ],
@@ -101,6 +99,14 @@ for router in (
 
 
 @app.get("/", include_in_schema=False)
+def root_page(request: Request):
+    # NexCYR's public entry point intentionally begins with the cinematic boot
+    # sequence. The operator login remains available at /login for deployments
+    # that want an explicit operator gate without hiding the product experience.
+    return templates.TemplateResponse(request, "boot.html")
+
+
+@app.get("/login", include_in_schema=False)
 def login_page(request: Request):
     return templates.TemplateResponse(request, "login.html")
 
