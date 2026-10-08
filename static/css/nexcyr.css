@@ -2065,3 +2065,22 @@ body.sidebar-open .sidebar-toggle {
     transform: translate(-50%, -50%);
   }
 }
+
+
+/* Final Earth-only size/brightness adjustment. */
+.liquid-backdrop .earth-backdrop.real-earth {
+  width: min(52vw, 680px);
+  height: min(52vw, 680px);
+  right: -10vw;
+  opacity: 0.23;
+  filter: saturate(0.84) brightness(0.60) contrast(1.20);
+}
+@media (max-width: 780px) {
+  .liquid-backdrop .earth-backdrop.real-earth {
+    width: 88vmin;
+    height: 88vmin;
+    left: 58%;
+    right: auto;
+    opacity: 0.18;
+  }
+}
