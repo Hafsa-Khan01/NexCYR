@@ -2142,3 +2142,27 @@ body.sidebar-open .sidebar-toggle {
     opacity: 0.24;
   }
 }
+
+
+/* FINAL EARTH PROPORTION — visible/pro realistic, reaching the SCAN/SOC zone only. */
+.liquid-backdrop .earth-backdrop.real-earth {
+  right: -4vw;
+  top: 50%;
+  width: min(54vw, 710px);
+  height: min(54vw, 710px);
+  opacity: 0.46;
+  filter: saturate(0.96) brightness(0.76) contrast(1.16);
+  box-shadow:
+    inset -82px -52px 118px rgba(0,0,0,0.84),
+    inset 20px 10px 55px rgba(140,205,255,0.07),
+    0 0 78px rgba(34,224,255,0.07);
+}
+@media (max-width: 780px) {
+  .liquid-backdrop .earth-backdrop.real-earth {
+    width: 90vmin;
+    height: 90vmin;
+    left: 58%;
+    right: auto;
+    opacity: 0.27;
+  }
+}
