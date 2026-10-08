@@ -166,6 +166,13 @@ async function targetOptions() {
   const targets = await endpoints.targets();
   return targets.map((t) => [String(t.id), `${t.name || t.value} (${t.target_type}${t.authorized ? " · authorized" : " · NOT authorized"})`]);
 }
+
+async function authorizedTargetOptions() {
+  const targets = await endpoints.targets();
+  return targets
+    .filter((t) => Boolean(t.authorized))
+    .map((t) => [String(t.id), `${t.name || t.value} (${t.target_type} · authorized)`]);
+}
 async function assessmentOptions() {
   const a = await endpoints.assessments();
   return [["", "— none —"]].concat(a.map((x) => [String(x.id), x.name]));
@@ -426,6 +433,7 @@ async function targetsView(container, ctx) {
           { key: "status", label: "Status", render: (r) => statusBadge(r.status) },
           { key: "assessment_id", label: "Assessment", render: (r) => r.assessment_id ? el("span", { class: "mono muted", text: "#" + r.assessment_id }) : el("span", { class: "muted", text: "—" }) },
           { label: "Actions", render: (r) => el("div", { class: "row-actions" },
+              !r.authorized ? el("button", { class: "btn primary sm", text: "Authorize", onClick: () => authorize(r) }) : null,
               el("button", { class: "btn ghost sm", text: "Edit", onClick: () => form(r) }),
               el("button", { class: "btn danger sm", text: "Delete", onClick: () => del(r) })) },
         ],
@@ -479,6 +487,21 @@ async function targetsView(container, ctx) {
       openModal(existing ? `Edit target #${existing.id}` : "New authorized target", f, [el("button", { class: "btn ghost", text: "Cancel", onClick: closeModal }), save]);
     }
 
+    function authorize(r) {
+      confirmModal(
+        "Authorize target",
+        `I confirm "${r.value}" is explicitly authorized for scanning and reconnaissance.`,
+        async () => {
+          try {
+            await endpoints.updateTarget(r.id, { authorized: true });
+            toast("Target authorized", `${r.value} can now be used for scans and recon.`, "ok");
+            reload();
+          } catch (e) { toast("Authorization failed", e.message, "err"); }
+        },
+        "Authorize"
+      );
+    }
+
     function del(r) {
       confirmModal("Delete target", `Delete target "${r.value}"? Linked scans/findings referencing it may be affected.`, async () => {
         try { await endpoints.deleteTarget(r.id); toast("Target deleted", "", "ok"); reload(); }
@@ -530,8 +553,7 @@ async function scansView(container, ctx) {
     }
 
     async function form() {
-      const tOpts = await targetOptions();
-      const authorized = tOpts.filter(([, l]) => l.includes("authorized"));
+      const authorized = await authorizedTargetOptions();
       let agents = [];
       try { agents = await endpoints.agents(); } catch (_) {}
       const online = agents.filter((a) => a.status === "online");
@@ -667,7 +689,7 @@ async function reconView(container, ctx) {
     }
 
     async function form() {
-      const tOpts = (await targetOptions()).filter(([, l]) => l.includes("authorized"));
+      const tOpts = await authorizedTargetOptions();
       const f = el("form", {},
         field("Target", select("target_id", tOpts.length ? tOpts : [["", "No authorized targets"]])),
         el("div", { class: "field-row" },
