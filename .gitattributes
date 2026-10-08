@@ -1,0 +1,12 @@
+# These files are executed inside Linux containers and on the VPS. A CRLF
+# checkout makes them fail with "bad interpreter: /bin/sh^M" or
+# "$'\r': command not found", which is fatal for the deploy and invisible on a
+# Windows working tree. Pin them to LF regardless of core.autocrlf.
+
+*.sh                            text eol=lf
+Dockerfile                      text eol=lf
+.dockerignore                   text eol=lf
+Procfile                        text eol=lf
+deploy/nexcyr.service           text eol=lf
+deploy/nginx.conf               text eol=lf
+deploy/nginx-upgrade-map.conf   text eol=lf

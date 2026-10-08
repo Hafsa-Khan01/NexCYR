@@ -1,0 +1,44 @@
+[Unit]
+Description=NexCYR - Unified Cybersecurity Assessment & Purple Team Platform
+Documentation=https://github.com/Hafsa-Khan01/NexCYR
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nexcyr
+Group=nexcyr
+WorkingDirectory=/opt/nexcyr
+
+Environment="PATH=/opt/nexcyr/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+# Optional operator file for AI provider keys. The leading '-' means a missing
+# file is not an error: NexCYR runs fully on its local fallback engine without it.
+EnvironmentFile=-/opt/nexcyr/.env
+# State lives on the real disk, never inside the code tree, so `git pull` and
+# redeploys can never overwrite the database or previously generated reports.
+Environment="DATABASE_URL=sqlite:////var/lib/nexcyr/nexcyr.db"
+Environment="REPORTS_DIR=/var/lib/nexcyr/reports"
+
+# Single worker: SQLite serializes writes and multiple workers would contend on
+# the same file. Move DATABASE_URL to Postgres before scaling out.
+ExecStart=/opt/nexcyr/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --workers 1
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+
+# --- Hardening ---
+# The service binds to loopback only; nginx is the sole public entry point.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ReadWritePaths=/var/lib/nexcyr
+
+[Install]
+WantedBy=multi-user.target

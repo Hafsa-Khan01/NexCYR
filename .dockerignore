@@ -1,0 +1,48 @@
+# Keep the build context small and never bake secrets or local state into the image.
+.git
+.gitignore
+.github
+.venv
+venv
+env
+__pycache__
+*.py[cod]
+.pytest_cache
+.coverage
+htmlcov
+.mypy_cache
+.ruff_cache
+
+# Secrets — supplied at runtime as environment variables only.
+.env
+.env.*
+!.env.example
+
+# Local database and generated reports — provided by a mounted volume at runtime.
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+nexcyr.db
+nexcyr_backup.db
+reports/
+data/
+
+# Deploy metadata not needed inside the image.
+# Listed individually rather than as `deploy/`: Docker cannot re-include a file
+# whose parent directory was excluded, and deploy/docker-entrypoint.sh IS needed
+# (it is the image ENTRYPOINT).
+Dockerfile
+.dockerignore
+fly.toml
+railway.json
+Procfile
+.gitattributes
+deploy/setup-vps.sh
+deploy/nexcyr.service
+deploy/nginx.conf
+deploy/nginx-upgrade-map.conf
+
+# Tests are copied for reference but are not run in the image.
+tests/
+conftest.py

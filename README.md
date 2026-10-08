@@ -67,32 +67,132 @@ operator name in `sessionStorage` only — it is a UI gate, not an auth boundary
 
 ---
 
-## Production / Railway
+## Deployment
 
-NexCYR is Railway-ready. Set the start command to bind the injected port:
+NexCYR is one process serving both the API and the UI, so any Python host works.
+Pick the option that matches what you need to demonstrate.
 
-```bash
-uvicorn main:app --host 0.0.0.0 --port $PORT
-```
+| Option | Files | Persistent data | Good for |
+| --- | --- | --- | --- |
+| **Railway** | `railway.json`, `Dockerfile` | volume mounted at `/data` | Zero-config public URL for a viva demo |
+| **Fly.io** | `fly.toml`, `Dockerfile` | `nexcyr_data` volume at `/data` | Same, with a warm machine (no cold starts) |
+| **Any container host** | `Dockerfile`, `.dockerignore`, `Procfile` | bind-mount `/data` | Render, ECS, Docker Compose, local Docker |
+| **VPS** | `deploy/` (systemd + nginx + bootstrap) | real disk at `/var/lib/nexcyr` | Demoing **real Agents** connecting from inside a target network |
 
-Configure via environment variables (see `.env.example`):
+### Required environment variables
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `DATABASE_URL` | SQLAlchemy database URL | `sqlite:///./nexcyr.db` |
+| `REPORTS_DIR` | Directory for generated PDFs | `./reports` |
 | `AI_PROVIDER` | External AI provider name (optional) | *(empty → fallback engine)* |
 | `AI_MODEL` | External AI model (optional) | *(empty)* |
 | `OPENAI_API_KEY` | External AI key (optional) | *(empty)* |
 | `OPENAI_BASE_URL` | OpenAI-compatible base URL | `https://api.openai.com/v1` |
 | `NMAP_PATH` | Explicit path to the nmap binary (optional) | auto-detected on `PATH` |
-| `REPORTS_DIR` | Directory for generated PDFs | `./reports` |
 
-No secrets are hardcoded. When no AI key is present the platform uses the fallback
-engine and remains fully functional.
+No secrets are hardcoded. Without an AI key the platform runs on its local
+Intelligence Fallback Engine and stays fully functional.
 
-> **Note on SQLite in ephemeral filesystems:** Railway containers have ephemeral
-> disks. For durable storage, attach a Railway volume to `REPORTS_DIR` / the DB
-> path, or point `DATABASE_URL` at a managed PostgreSQL instance.
+### Railway
+
+`railway.json` already pins the Dockerfile build, the start command
+(`uvicorn main:app --host 0.0.0.0 --port $PORT`), the `/health` healthcheck and a
+single replica. You only need to attach storage:
+
+```bash
+railway init
+railway volume add -m /data          # SQLite DB + PDFs survive redeploys
+railway up
+railway domain                       # public HTTPS URL
+```
+
+Then set `DATABASE_URL=sqlite:////data/nexcyr.db` and `REPORTS_DIR=/data/reports`
+as Railway variables (four slashes = absolute path).
+
+> **Without a volume the database is wiped on every deploy.** Railway's container
+> filesystem is ephemeral. If you would rather not manage a volume, create a
+> Railway PostgreSQL plugin and set `DATABASE_URL` to its URL — uncomment
+> `psycopg[binary]` in `requirements.txt` and you are done; the models and engine
+> setup are dialect-agnostic, so no code changes are needed.
+
+### Fly.io
+
+```bash
+fly launch --no-deploy --copy-config
+fly volumes create nexcyr_data --size 1 --region lhr
+fly deploy
+```
+
+`fly.toml` keeps `min_machines_running = 1` and `auto_stop_machines = false` so a
+cold start cannot interrupt a live demo or an agent's job poll.
+
+### Docker (anywhere)
+
+```bash
+docker build -t nexcyr .
+docker volume create nexcyr-data
+docker run -d --name nexcyr -p 8000:8000 -v nexcyr-data:/data nexcyr
+```
+
+The image runs as a non-root `nexcyr` user, defaults to the `/data` volume and
+has a `/health` HEALTHCHECK.
+
+### VPS (systemd + nginx) — recommended for the hybrid Agent story
+
+This is the only option where field Agents can reach the Cloud over the internet
+with TLS while you also control the host. One command provisions it:
+
+```bash
+git clone https://github.com/Hafsa-Khan01/NexCYR.git /tmp/nexcyr-src
+cd /tmp/nexcyr-src && sudo bash deploy/setup-vps.sh
+```
+
+The script is idempotent and never deletes data — an existing
+`/var/lib/nexcyr/nexcyr.db` is reused, not overwritten. Afterwards replace
+`nexcyr.example.com` in `/etc/nginx/sites-available/nexcyr` with your hostname
+and run `sudo certbot --nginx -d your.hostname`.
+
+Layout it creates:
+
+- `/opt/nexcyr` — application + `.venv`, owned by the `nexcyr` system user
+- `/var/lib/nexcyr/nexcyr.db` — database (`chmod 750` on the directory)
+- `/var/lib/nexcyr/reports/` — generated PDFs (`chmod 700`)
+- uvicorn bound to **127.0.0.1:8000**; nginx is the only public entry point
+- systemd hardening: `NoNewPrivileges`, `ProtectSystem=strict`, `PrivateTmp`,
+  `ReadWritePaths=/var/lib/nexcyr`
+
+Useful commands: `sudo journalctl -u nexcyr -f`, `sudo systemctl restart nexcyr`.
+
+Back up the database without stopping the service:
+
+```bash
+sudo -u nexcyr sqlite3 /var/lib/nexcyr/nexcyr.db ".backup '/root/nexcyr-$(date +%F).db'"
+```
+
+### Connecting an Agent after deployment
+
+The Cloud side of the hybrid architecture is fully implemented; an Agent is any
+client that enrolls and then talks to the agent-facing endpoints with its token:
+
+1. **Agents → Register agent** in the UI. Copy the enrollment token — it is
+   shown **once** and only its SHA-256 hash is stored.
+2. From a host inside the authorized target network, using
+   `X-NexCYR-Agent-Token: <token>` (or `Authorization: Bearer <token>`):
+   - `POST /api/agents/register` — announce hostname, platform, capabilities
+   - `POST /api/agents/heartbeat` — keep status `online` (90s window)
+   - `GET  /api/agents/me/jobs/next` — claim a structured job
+   - `POST /api/agents/jobs/{id}/result` — return validated results
+3. Select that agent as the scan location in the UI. If it is not `online`, the
+   Cloud refuses with **`NO AVAILABLE NEXCYR AGENT`** rather than fabricating
+   results.
+
+> **Do not install nmap on a public cloud host.** Scanning from Railway/Fly can
+> breach provider terms and may touch networks you are not authorized to test.
+> The container image deliberately omits nmap, so Cloud-side scans report
+> `NMAP_UNAVAILABLE` and real enumeration is routed to an enrolled Agent inside
+> the authorized network. Run nmap only on your own lab machine or on an Agent
+> you control, against targets with recorded authorization.
 
 ---
 
@@ -224,7 +324,18 @@ NexCYR/
 ├── static/
 │   ├── css/                # nexcyr.css, boot.css, login.css
 │   └── js/                 # api.js, ui.js, voice.js, attackmap.js, views.js, app.js
-└── tests/                  # test_api_contract.py, test_hybrid_agents.py
+├── tests/                  # test_api_contract.py, test_hybrid_agents.py
+├── Dockerfile              # Single-image deploy (non-root, /data volume, healthcheck)
+├── .dockerignore
+├── railway.json            # Railway build/start/healthcheck/replica policy
+├── fly.toml                # Fly.io with a mounted nexcyr_data volume
+├── Procfile                # Generic PaaS start command
+├── .python-version
+└── deploy/                 # VPS path
+    ├── setup-vps.sh        #   Idempotent bootstrap (user, venv, dirs, units)
+    ├── nexcyr.service      #   Hardened systemd unit, loopback-only uvicorn
+    ├── nginx.conf          #   TLS reverse proxy to 127.0.0.1:8000
+    └── nginx-upgrade-map.conf
 ```
 
 ---
