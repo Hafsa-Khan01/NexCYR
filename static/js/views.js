@@ -1578,7 +1578,7 @@ async function agentsView(container, ctx) {
           [el("button", { class: "btn primary", text: "Close", onClick: closeModal })]);
         return;
       }
-      const tOpts = (await targetOptions()).filter(([, l]) => l.includes("authorized"));
+      const tOpts = await authorizedTargetOptions();
       const f = el("form", {},
         field("Authorized target", select("target_id", tOpts.length ? tOpts : [["", "No authorized targets"]]),
           tOpts.length ? "Only explicitly authorized targets may be scanned." : "Add and authorize a target first."),
