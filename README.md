@@ -94,6 +94,12 @@ Pick the option that matches what you need to demonstrate.
 No secrets are hardcoded. Without an AI key the platform runs on its local
 Intelligence Fallback Engine and stays fully functional.
 
+### Cloud Nmap
+
+The deployment Docker image includes the Nmap system package, so a deployed NexCYR instance does not depend on Nmap being installed on an operator's PC. Railway builds the repository's root Dockerfile for each deployment. citeturn316260search0turn316260search6
+
+Cloud Nmap is for targets that the cloud service can reach and that are explicitly marked authorized in NexCYR. A private LAN/CIDR still needs an online NexCYR Agent inside that network; the cloud service cannot magically reach a user's local network.
+
 ### Railway
 
 `railway.json` already pins the Dockerfile build, the start command
