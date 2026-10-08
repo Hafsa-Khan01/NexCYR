@@ -1365,3 +1365,73 @@ body.sidebar-collapsed .nav-item span:not(.ni) {
     animation: none !important;
   }
 }
+
+
+/* Final drawer behavior: three dots opens the navigation; collapsed state leaves a clean canvas. */
+body.sidebar-collapsed .app {
+  grid-template-columns: 0 1fr;
+}
+body.sidebar-collapsed .sidebar {
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-right: 0;
+}
+body.sidebar-collapsed .brand {
+  padding-left: 58px;
+}
+body.sidebar-collapsed .brand-main {
+  width: auto;
+}
+body.sidebar-collapsed .brand-main .name {
+  display: block;
+}
+body.sidebar-collapsed .sidebar-toggle {
+  position: fixed;
+  left: 12px;
+  top: 14px;
+  z-index: 10001;
+  transform: none;
+  width: 34px;
+  height: 30px;
+  border-color: rgba(34,224,255,0.30);
+  background: rgba(0,0,0,0.84);
+}
+body.sidebar-open .app {
+  grid-template-columns: 244px 1fr;
+}
+body.sidebar-open .sidebar {
+  width: auto;
+  opacity: 1;
+  pointer-events: auto;
+  padding: 12px 10px;
+  border-right: 1px solid rgba(34,224,255,0.16);
+}
+body.sidebar-open .brand {
+  padding-left: 18px;
+}
+body.sidebar-open .sidebar-toggle {
+  position: static;
+  transform: none;
+  margin-left: auto;
+}
+
+@media (max-width: 780px) {
+  body.sidebar-open .app {
+    grid-template-columns: 1fr;
+  }
+  body.sidebar-open .sidebar {
+    position: fixed;
+    inset: 58px auto 0 0;
+    width: min(82vw, 300px);
+    z-index: 10000;
+    background: rgba(0,0,0,0.97);
+    box-shadow: 18px 0 70px rgba(0,0,0,0.82);
+  }
+  body.sidebar-collapsed .brand {
+    padding-left: 58px;
+  }
+}
