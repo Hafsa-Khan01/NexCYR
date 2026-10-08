@@ -2312,3 +2312,23 @@ body.sidebar-open .sidebar-toggle {
     opacity: 0.95;
   }
 }
+
+
+/* Final Earth realism: brighter natural night-light detail, no artificial black shade.
+   Earth-only change; all other dashboard elements remain untouched. */
+.liquid-backdrop .earth-backdrop.real-earth {
+  opacity: 0.72;
+  filter: saturate(1.10) brightness(1.08) contrast(1.04) !important;
+  background-color: transparent !important;
+  box-shadow:
+    inset 18px 12px 48px rgba(111,190,255,0.06),
+    0 0 70px rgba(34,224,255,0.05) !important;
+}
+.liquid-backdrop .earth-backdrop.real-earth::before,
+.liquid-backdrop .earth-backdrop.real-earth::after {
+  display: none !important;
+  background: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  opacity: 0 !important;
+}
