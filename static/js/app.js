@@ -1,5 +1,5 @@
 // NexCYR app shell — router, global search, AI status chip, boot wiring.
-import { endpoints } from "./api.js";
+import { endpoints } from "./api.js?v=20261008-fast1";
 import { views } from "./views.js?v=20261008-earth1";
 import { el, toast, closeModal } from "./ui.js";
 import * as voice from "./voice.js";
@@ -173,15 +173,22 @@ document.addEventListener("click", (e) => {
 
 // ---- boot ----
 async function boot() {
-  await Promise.all([loadVoiceSettings(), refreshAiChip()]);
+  // Render the requested view first. Non-essential status/settings calls
+  // continue in the background so the command center feels immediate.
   const initial = (window.location.hash || "#dashboard").slice(1);
   await navigate(views[initial] ? initial : "dashboard");
-  try {
-    const h = await endpoints.health();
-    if (h && h.status && h.status !== "healthy") toast("Service degraded", h.status, "warn");
-  } catch (_) {
-    toast("Backend unreachable", "Could not reach /health", "err");
-  }
+
+  Promise.allSettled([loadVoiceSettings(), refreshAiChip()]);
+
+  endpoints.health()
+    .then((h) => {
+      if (h && h.status && h.status !== "healthy") {
+        toast("Service degraded", h.status, "warn");
+      }
+    })
+    .catch(() => {
+      toast("Backend unreachable", "Could not reach /health", "err");
+    });
 }
 
 window.addEventListener("hashchange", () => {
