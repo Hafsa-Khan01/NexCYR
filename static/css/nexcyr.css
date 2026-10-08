@@ -1504,10 +1504,9 @@ body.sidebar-open .sidebar-toggle {
   margin-left: 5px;
 }
 
-.topbar .title small::before {
-  content: "·";
-  margin-right: 5px;
-  color: var(--violet);
+.topbar .title small {
+  margin-left: 0;
+  color: var(--txt-mute);
 }
 
 .searchbox {
