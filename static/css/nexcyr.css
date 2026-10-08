@@ -2252,3 +2252,18 @@ body.sidebar-open .sidebar-toggle {
   opacity: 0 !important;
   display: none !important;
 }
+
+
+/* FINAL EARTH-ONLY FIX: preserve the photographic night Earth; remove artificial shading overlays. */
+.liquid-backdrop .earth-backdrop.real-earth::before,
+.liquid-backdrop .earth-backdrop.real-earth::after {
+  background: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  mix-blend-mode: normal !important;
+  opacity: 0 !important;
+}
+.liquid-backdrop .earth-backdrop.real-earth {
+  background-color: transparent !important;
+  filter: saturate(1.02) brightness(0.94) contrast(1.08) !important;
+}
