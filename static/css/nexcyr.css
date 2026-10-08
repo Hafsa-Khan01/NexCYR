@@ -1946,3 +1946,89 @@ body.sidebar-open .sidebar-toggle {
     transform: translate(-50%, -50%);
   }
 }
+
+
+/* ============================================================
+   FINAL LOCK — Real night Earth on the right / Operator side.
+   Only the Earth backdrop is adjusted. Existing dashboard UI,
+   navigation, scanline, Cyber Map, and all other elements remain unchanged.
+   ============================================================ */
+.liquid-backdrop .earth-backdrop.real-earth {
+  position: absolute;
+  left: auto;
+  right: -6vw;
+  top: 50%;
+  width: min(50vw, 660px);
+  height: min(50vw, 660px);
+  transform: translateY(-50%);
+  border-radius: 50%;
+  overflow: hidden;
+  z-index: 0;
+  opacity: 0.38;
+  background-color: #01030a;
+  background-image: url("https://svs.gsfc.nasa.gov/vis/a030000/a030800/a030876/BlackMarble_2016_global_7km_print.jpg");
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  background-position: 0 50%;
+  animation: nexRealEarthTurn 44s linear infinite;
+  filter: saturate(1.04) brightness(0.84) contrast(1.10);
+  box-shadow:
+    inset 18px 12px 55px rgba(111,190,255,0.08),
+    inset -72px -48px 110px rgba(0,0,0,0.78),
+    0 0 90px rgba(34,224,255,0.10);
+}
+
+.liquid-backdrop .earth-backdrop.real-earth::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    radial-gradient(circle at 18% 35%, rgba(255,226,180,0.18), transparent 14%),
+    radial-gradient(circle at 23% 29%, rgba(255,247,225,0.10), transparent 22%),
+    linear-gradient(100deg, transparent 0 48%, rgba(0,0,0,0.10) 64%, rgba(0,0,0,0.70) 100%);
+  mix-blend-mode: screen;
+}
+
+.liquid-backdrop .earth-backdrop.real-earth::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 3;
+  background:
+    radial-gradient(circle at 76% 76%, rgba(0,0,0,0.72), transparent 52%),
+    radial-gradient(circle at 50% 50%, transparent 58%, rgba(0,0,0,0.34) 100%);
+  box-shadow:
+    inset 22px 14px 50px rgba(255,255,255,0.04),
+    inset -66px -44px 105px rgba(0,0,0,0.70),
+    0 0 80px rgba(34,224,255,0.10);
+  border: 1px solid rgba(34,224,255,0.12);
+}
+
+.liquid-backdrop .earth-backdrop.real-earth .earth-radar {
+  z-index: 5;
+  opacity: 0.90;
+  mix-blend-mode: screen;
+}
+
+@media (max-width: 780px) {
+  .liquid-backdrop .earth-backdrop.real-earth {
+    left: 50%;
+    right: auto;
+    top: 52%;
+    width: 88vmin;
+    height: 88vmin;
+    transform: translate(-50%, -50%);
+    opacity: 0.22;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquid-backdrop .earth-backdrop.real-earth {
+    animation: none !important;
+  }
+}
