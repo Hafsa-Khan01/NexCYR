@@ -2032,3 +2032,36 @@ body.sidebar-open .sidebar-toggle {
     animation: none !important;
   }
 }
+
+
+/* User-requested final Earth-only adjustment: darker, farther right, no radar.
+   Existing dashboard scanline and every other UI element remain unchanged. */
+.liquid-backdrop .earth-backdrop.real-earth {
+  right: -10vw;
+  top: 54%;
+  width: min(46vw, 600px);
+  height: min(46vw, 600px);
+  opacity: 0.27;
+  filter: saturate(0.88) brightness(0.68) contrast(1.18);
+  box-shadow:
+    inset 18px 12px 55px rgba(111,190,255,0.05),
+    inset -78px -52px 120px rgba(0,0,0,0.90),
+    0 0 72px rgba(34,224,255,0.06);
+}
+
+.liquid-backdrop .earth-backdrop.real-earth .earth-radar,
+.liquid-backdrop .earth-backdrop .earth-radar {
+  display: none !important;
+}
+
+@media (max-width: 780px) {
+  .liquid-backdrop .earth-backdrop.real-earth {
+    right: auto;
+    left: 58%;
+    top: 52%;
+    width: 82vmin;
+    height: 82vmin;
+    opacity: 0.20;
+    transform: translate(-50%, -50%);
+  }
+}
