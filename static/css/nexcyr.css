@@ -2166,3 +2166,48 @@ body.sidebar-open .sidebar-toggle {
     opacity: 0.27;
   }
 }
+
+
+/* FINAL EARTH-ONLY REQUEST — larger transparent night Earth; scanlines clear inside globe.
+   No dashboard cards, navigation, text, buttons, Cyber Map, or other UI is changed. */
+.liquid-backdrop .earth-backdrop.real-earth {
+  right: -4vw;
+  top: 50%;
+  width: min(66vw, 860px);
+  height: min(66vw, 860px);
+  opacity: 0.52;
+  filter: saturate(0.96) brightness(0.78) contrast(1.16);
+  z-index: 0;
+}
+
+/* Keep the existing global scanline everywhere, but make it transparent
+   exactly over the Earth so the photographic globe remains clean and visible. */
+.app::before {
+  -webkit-mask-image: radial-gradient(
+    circle min(33vw, 430px) at calc(100% - 4vw) 50%,
+    transparent 0,
+    transparent 98%,
+    black 100%
+  ) !important;
+  mask-image: radial-gradient(
+    circle min(33vw, 430px) at calc(100% - 4vw) 50%,
+    transparent 0,
+    transparent 98%,
+    black 100%
+  ) !important;
+}
+
+@media (max-width: 780px) {
+  .liquid-backdrop .earth-backdrop.real-earth {
+    width: 94vmin;
+    height: 94vmin;
+    left: 58%;
+    right: auto;
+    opacity: 0.26;
+  }
+
+  .app::before {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+}
