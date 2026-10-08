@@ -2269,38 +2269,9 @@ body.sidebar-open .sidebar-toggle {
 }
 
 
-/* Final sidebar state: collapsed mode keeps navigation icons visible only. */
+/* Collapsed navigation: keep the existing header untouched; show only clean,
+   transparent navigation symbols in the side rail. */
 @media (min-width: 781px) {
-  body.sidebar-collapsed .app {
-    grid-template-columns: 72px minmax(0, 1fr);
-  }
-
-  body.sidebar-collapsed .brand {
-    width: auto;
-    padding: 0 8px;
-    justify-content: center;
-    gap: 0;
-  }
-
-  body.sidebar-collapsed .brand-main {
-    width: 30px;
-    flex: 0 0 30px;
-    justify-content: center;
-  }
-
-  body.sidebar-collapsed .brand-main .name {
-    display: none;
-  }
-
-  body.sidebar-collapsed .sidebar-toggle {
-    position: fixed;
-    left: 84px;
-    top: 14px;
-    z-index: 10001;
-    transform: none;
-    margin: 0;
-  }
-
   body.sidebar-collapsed .sidebar {
     width: 72px;
     min-width: 72px;
@@ -2309,6 +2280,8 @@ body.sidebar-open .sidebar-toggle {
     pointer-events: auto;
     overflow: hidden;
     border-right: 1px solid var(--line);
+    background: transparent;
+    backdrop-filter: none;
   }
 
   body.sidebar-collapsed .sidebar .nav-group-label,
@@ -2322,6 +2295,15 @@ body.sidebar-open .sidebar-toggle {
     padding: 9px 8px;
     min-height: 38px;
     font-size: 0;
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  body.sidebar-collapsed .sidebar .nav-item:hover,
+  body.sidebar-collapsed .sidebar .nav-item.active {
+    background: transparent;
+    box-shadow: none;
   }
 
   body.sidebar-collapsed .sidebar .nav-item .ni {
