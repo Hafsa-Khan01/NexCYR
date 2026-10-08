@@ -118,6 +118,10 @@ def boot_page(request: Request):
 
 @app.get("/dashboard", include_in_schema=False)
 def dashboard_page(request: Request):
+    # Direct visits to the dashboard go through the NexCYR boot sequence first.
+    # The boot screen returns here with ?from_boot=1, avoiding a redirect loop.
+    if request.query_params.get("from_boot") != "1":
+        return templates.TemplateResponse(request, "boot.html")
     return templates.TemplateResponse(request, "dashboard.html")
 
 
