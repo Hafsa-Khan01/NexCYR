@@ -23,7 +23,7 @@ from models.finding import Finding
 from models.scan import Scan
 from models.target import Target
 from services.nmap_service import is_safe_scan_value, nmap_available
-from services.recon_service import enumerate_services
+from services.recon_service import enumerate_services, run_recon
 from services.risk_engine import calculate_finding_risk, calculate_overall_risk
 from services.vulnerability_engine import analyze_services
 
@@ -188,8 +188,27 @@ def create_scan(data: ScanCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(scan)
 
-    recon = enumerate_services(target.value)
-    services = recon.get("services", [])
+    if scan_type == "service":
+        recon = enumerate_services(target.value)
+        services = recon.get("services", [])
+        open_ports = []
+    elif scan_type == "basic":
+        # Basic cloud scans do not require Nmap. They use safe TCP connect
+        # checks against NexCYR's fixed common-port profile.
+        recon = run_recon(target.value, "port_discovery")
+        services = []
+        open_ports = recon.get("open_ports", [])
+    else:
+        # A true stealth/Nmap profile belongs on an enrolled Agent so the
+        # platform never pretends that the cloud scanner performed it.
+        recon = {
+            "status": "agent_required",
+            "services": [],
+            "open_ports": [],
+            "error": "Stealth Nmap scanning requires an online NexCYR Agent.",
+        }
+        services = []
+        open_ports = []
 
     created_findings = []
     if services:
@@ -235,17 +254,32 @@ def create_scan(data: ScanCreate, db: Session = Depends(get_db)):
     scan.completed_at = datetime.now(timezone.utc)
     if recon.get("status") == "completed":
         scan.status = "completed"
-        open_services = [s for s in services if s.get("state") == "open"]
-        scan.result_summary = (
-            f"{len(open_services)} open service(s) detected on {target.value}"
-            if services
-            else f"No open services detected on {target.value}"
-        )
-        scan.result_data = json.dumps({"services": services}, default=str)
+        if scan_type == "service":
+            open_services = [s for s in services if s.get("state") == "open"]
+            scan.result_summary = (
+                f"{len(open_services)} open service(s) detected on {target.value}"
+                if services
+                else f"No open services detected on {target.value}"
+            )
+            scan.result_data = json.dumps({"services": services}, default=str)
+        else:
+            scan.result_summary = (
+                f"{len(open_ports)} open port(s) detected on {target.value}"
+                if open_ports
+                else f"No open ports detected on {target.value}"
+            )
+            scan.result_data = json.dumps({
+                "open_ports": open_ports,
+                "checked_ports": recon.get("checked_ports", []),
+            }, default=str)
     elif recon.get("status") == "nmap_unavailable":
         scan.status = "nmap_unavailable"
         scan.error = recon.get("error")
-        scan.result_summary = "Nmap is not installed; no scan results were produced."
+        scan.result_summary = "Nmap is not installed; use an online NexCYR Agent for Nmap scans."
+    elif recon.get("status") == "agent_required":
+        scan.status = "agent_required"
+        scan.error = recon.get("error")
+        scan.result_summary = "This scan profile must run from an online NexCYR Agent."
     else:
         scan.status = "failed"
         scan.error = recon.get("error") or "Scan did not complete."
