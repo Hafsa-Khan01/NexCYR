@@ -2385,3 +2385,109 @@ body.sidebar-open .sidebar-toggle {
 /* Final dangerous skull cursor */
 :root { --skull-cursor: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDQ4IDQ4Ij48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmZmZmYiLz48c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iI2M4ZDBkYSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzdiODc5NyIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGQ9Ik0yNCAzLjVDMTMuMiAzLjUgNi40IDEwLjggNi40IDIwLjVjMCA3LjQgMy44IDEyIDguMiAxNC40djUuMmMwIDEuNyAxLjQgMyAzIDNoMTNjMS43IDAgMy0xLjMgMy0zdi01LjJjNC40LTIuNCA4LjItNyA4LjItMTQuNEM0MS42IDEwLjggMzQuOCAzLjUgMjQgMy41WiIgZmlsbD0idXJsKCNnKSIgc3Ryb2tlPSIjMjJlMGZmIiBzdHJva2Utd2lkdGg9IjEuNyIvPjxwYXRoIGQ9Ik0xMyAyMGMuMy00IDMtNi40IDYuNC02LjQgMS45IDAgMy41LjcgNC42IDIgMS4xLTEuMyAyLjctMiA0LjYtMiAzLjQgMCA2LjEgMi40IDYuNCA2LjQuMyA0LjItMi40IDYuOC02LjIgNi42LTItLjEtMy42LS45LTQuOC0yLjQtMS4yIDEuNS0yLjggMi4zLTQuOCAyLjQtMy44LjItNi41LTIuNC02LjItNi42WiIgZmlsbD0iIzBhMGYxNyIgc3Ryb2tlPSIjOGI1Y2Y2IiBzdHJva2Utd2lkdGg9IjEuMiIvPjxwYXRoIGQ9Ik0yMC40IDI5LjZoNy4ybC0xIDMuM2gtNS4yeiIgZmlsbD0iIzBhMGYxNyIgc3Ryb2tlPSIjZTExZDhmIiBzdHJva2Utd2lkdGg9IjEuMSIvPjxwYXRoIGQ9Ik0xNy4yIDM1LjVoMTMuNnY2SDE3LjJ6IiBmaWxsPSIjYjZjMGNjIiBzdHJva2U9IiMyMmUwZmYiIHN0cm9rZS13aWR0aD0iMSIvPjxwYXRoIGQ9Ik0xOS4xIDM1LjV2Nk0yMi40IDM1LjV2Nk0yNS42IDM1LjV2Nk0yOC45IDM1LjV2NiIgc3Ryb2tlPSIjNWM2ODc4IiBzdHJva2Utd2lkdGg9IjEiLz48Y2lyY2xlIGN4PSIxNy44IiBjeT0iMjAiIHI9IjIuMiIgZmlsbD0iIzIyZTBmZiIvPjxjaXJjbGUgY3g9IjMwLjIiIGN5PSIyMCIgcj0iMi4yIiBmaWxsPSIjZTExZDhmIi8+PC9zdmc+") 16 16, auto; }
 body, .app, a, button, input, select, textarea, .clickable { cursor: var(--skull-cursor); }
+
+
+/* FINAL USER LOCK — left real Earth + radar + dangerous skull cursor + visible authorization. */
+
+/* Keep the dashboard globe on the left, like the original command-center composition. */
+.liquid-backdrop .earth-backdrop.real-earth {
+  left: -10vw !important;
+  right: auto !important;
+  top: 50% !important;
+  width: min(55vw, 720px) !important;
+  height: min(55vw, 720px) !important;
+  opacity: 0.34 !important;
+  z-index: 0 !important;
+  filter: saturate(0.92) brightness(0.76) contrast(1.14) !important;
+}
+
+/* Restore the radar that older visual overrides disabled. */
+.liquid-backdrop .earth-backdrop .earth-radar {
+  display: block !important;
+  position: absolute;
+  inset: 5%;
+  z-index: 5;
+  border-radius: 50%;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0.88;
+  border: 1px solid rgba(34,224,255,0.15);
+  background:
+    repeating-radial-gradient(circle at 50% 50%, transparent 0 17.8%, rgba(34,224,255,0.055) 18% 18.35%, transparent 18.55% 35.8%, rgba(139,92,246,0.045) 36% 36.3%, transparent 36.5% 53.8%, rgba(34,224,255,0.042) 54% 54.25%, transparent 54.5% 100%),
+    repeating-conic-gradient(from 0deg, rgba(34,224,255,0.025) 0deg 1deg, transparent 1deg 15deg);
+  box-shadow: inset 0 0 34px rgba(34,224,255,0.055), 0 0 24px rgba(34,224,255,0.05);
+  mix-blend-mode: screen;
+}
+
+.liquid-backdrop .earth-backdrop .earth-radar::before {
+  content: "";
+  position: absolute;
+  inset: -8%;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg 318deg, rgba(34,224,255,0.02) 318deg, rgba(34,224,255,0.12) 334deg, rgba(34,224,255,0.36) 350deg, rgba(139,92,246,0.13) 360deg);
+  animation: dashboardRadarSweep 5.2s linear infinite;
+}
+
+.liquid-backdrop .earth-backdrop .earth-radar::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgba(34,224,255,0.90);
+  box-shadow: 0 0 10px rgba(34,224,255,0.72), 0 0 22px rgba(139,92,246,0.28);
+  animation: dashboardRadarPulse 1.8s ease-in-out infinite;
+}
+
+/* Make authorization impossible to miss in the target form. */
+.authorization-box {
+  margin-top: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(34,224,255,0.22);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(34,224,255,0.07), rgba(139,92,246,0.045));
+  box-shadow: inset 0 0 24px rgba(34,224,255,0.025), 0 0 18px rgba(34,224,255,0.035);
+}
+.authorization-box .check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.45;
+}
+.authorization-box .check input {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  accent-color: var(--cyan);
+  width: 17px;
+  height: 17px;
+}
+
+/* Final dangerous skull cursor: detailed silhouette, small hot-spot, still lightweight. */
+:root {
+  --skull-cursor: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDQ4IDQ4Ij48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmZmZmYiLz48c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iI2Q0ZDdlMSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzc1N2M4NiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGQ9Ik0yNCAzQzEzLjEgMyA1LjUgOS44IDUuNSAxOS4xYzAgNy4wIDMuMiAxMi4xIDguOCAxNC45djUuN2MwIDIuMSAxLjcgMy44IDMuOCAzLjhoMTEuOGMyLjEgMCAzLjgtMS43IDMuOC0zLjh2LTUuN2M1LjYtMi44IDguOC03LjkgOC44LTE0LjlDNDIuNSA5LjggMzQuOSAzIDI0IDNaIiBmaWxsPSJ1cmwoI2cpIiBzdHJva2U9IiMyMmUwZmYiIHN0cm9rZS13aWR0aD0iMS43Ii8+PHBhdGggZD0iTTEwLjggMTkuNWMwLTQuNyAzLjQtOC4xIDguMS04LjEgMi4yIDAgNC4xLjkgNS4xIDIuNSAxLjEtMS42IDIuOS0yLjUgNS4xLTIuNSA0LjcgMCA4LjEgMy40IDguMSA4LjEgMCAyLjMtMS44IDQuOC00LjQgNS4zLTEuNy4zLTMuMS0uNC00LjgtMS43LTEuNyAxLjMtMy4xIDIuMC00LjggMS43LTIuNi0uNS00LjQtMy00LjQtNS4zWiIgZmlsbD0iIzA0MGIwOCIvPjxwYXRoIGQ9Ik0xMy40IDI1LjFjMi44IDIuNiA2LjQgMy45IDEwLjYgMy45czcuOC0xLjMgMTAuNi0zLjkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2YyZjVmNyIgc3Ryb2tlLXdpZHRoPSIxLjciLz48cGF0aCBkPSJNMjEuNCAxOS44aDUuMmwtMi42IDMuN2wtMi42LTMuN3oiIGZpbGw9IiMyMmUwZmYiLz48cGF0aCBkPSJNMTEuOSAzMC44djYuOGMwIDEuNyAxLjQgMyAzLjEgM2gxOCBjMS43IDAgMy0xLjMgMy0zdi02LjgiIGZpbGw9IiMwNjBhMTIiIHN0cm9rZT0iIzIyZTBmZiIgc3Ryb2tlLXdpZHRoPSIxLjMiLz48cGF0aCBkPSJNMTEuOSAzNC4yaDI0TTExLjkgMzguNmgxOCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNzU3Yzg2IiBzdHJva2Utd2lkdGg9IjEuMiIvPjwvZyA+PC9zdmc+") 16 16, auto;
+}
+body, .app, a, button, input, select, textarea, .clickable {
+  cursor: var(--skull-cursor) !important;
+}
+
+@media (max-width: 780px) {
+  .liquid-backdrop .earth-backdrop.real-earth {
+    left: 58% !important;
+    right: auto !important;
+    top: 52% !important;
+    width: 88vmin !important;
+    height: 88vmin !important;
+    opacity: 0.22 !important;
+    transform: translate(-50%, -50%) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquid-backdrop .earth-backdrop .earth-radar::before,
+  .liquid-backdrop .earth-backdrop .earth-radar::after {
+    animation: none !important;
+  }
+}
