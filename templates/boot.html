@@ -146,29 +146,58 @@
     ];
 
     const total = rows.length;
-    const perStep = reduce ? 60 : 460;
+    const perStep = reduce ? 60 : 420;
     let i = 0;
+    let transitionStarted = false;
 
-    function step() {
-      if (i > 0) {
-        rows[i - 1].classList.remove("active");
-        rows[i - 1].classList.add("done");
-        rows[i - 1].querySelector(".st").textContent = "✔";
+    function markDone(row) {
+      if (!row) return;
+      row.classList.remove("active");
+      row.classList.add("done");
+      const state = row.querySelector(".st");
+      if (state) state.textContent = "✔";
+    }
+
+    async function verifyCore() {
+      foot.textContent = "Verifying NexCYR core health…";
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 1800);
+        const res = await fetch("/health", { cache: "no-store", signal: controller.signal });
+        clearTimeout(timeout);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.status !== "healthy") throw new Error("unhealthy");
+        foot.textContent = "CORE ONLINE · entering command center";
+        return true;
+      } catch (_) {
+        foot.textContent = "CORE CHECK TIMEOUT · entering command center";
+        return false;
       }
+    }
+
+    function finish() {
+      if (transitionStarted) return;
+      transitionStarted = true;
+      document.getElementById("boot").classList.add("fade");
+      setTimeout(() => { window.location.href = "/dashboard"; }, reduce ? 0 : 700);
+    }
+
+    async function step() {
+      if (i > 0) markDone(rows[i - 1]);
+
       if (i < total) {
         rows[i].classList.add("active");
         foot.textContent = labels[i];
         bar.style.width = ((i + 1) / total) * 100 + "%";
         i++;
         setTimeout(step, perStep);
-      } else {
-        foot.textContent = "All systems nominal — entering command center";
-        bar.style.width = "100%";
-        setTimeout(() => {
-          document.getElementById("boot").classList.add("fade");
-          setTimeout(() => { window.location.href = "/dashboard"; }, reduce ? 0 : 700);
-        }, reduce ? 60 : 500);
+        return;
       }
+
+      rows.forEach(markDone);
+      bar.style.width = "100%";
+      await verifyCore();
+      setTimeout(finish, reduce ? 80 : 420);
     }
     setTimeout(step, reduce ? 60 : 500);
   </script>
