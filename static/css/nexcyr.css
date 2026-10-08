@@ -2241,3 +2241,14 @@ body.sidebar-open .sidebar-toggle {
   border: 0 !important;
   mix-blend-mode: normal !important;
 }
+
+
+/* EARTH SHADE ONLY — remove all artificial dark overlays; keep everything else unchanged. */
+.liquid-backdrop .earth-backdrop.real-earth::before,
+.liquid-backdrop .earth-backdrop.real-earth::after {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  opacity: 0 !important;
+  display: none !important;
+}
