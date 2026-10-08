@@ -133,3 +133,14 @@ html, body {
   background: linear-gradient(90deg, var(--cyan), #ffffff, var(--cyan));
   -webkit-background-clip: text; background-clip: text;
 }
+
+
+/* Presentation-grade scanlines: visible without overpowering the boot core. */
+.boot::after {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(34,224,255,0.09) 0 1px,
+    transparent 1px 4px
+  );
+  opacity: 0.9;
+}
