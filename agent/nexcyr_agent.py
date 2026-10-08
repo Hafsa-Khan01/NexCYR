@@ -266,9 +266,9 @@ def nmap_job(job_type: str, target: str, ports_profile: str = "safe_default") ->
     if job_type == "NMAP_HOST_DISCOVERY":
         args = [nmap, "-sn", "-oX", "-", target]
     elif job_type == "NMAP_PORT_SCAN":
-        args = [nmap, "-Pn", "--top-ports", "100", "--open", "-oX", "-", target]
+        args = [nmap, "-Pn", "-sT", "--top-ports", "100", "--open", "-oX", "-", target]
     elif job_type == "NMAP_SERVICE_ENUMERATION":
-        args = [nmap, "-Pn", "-sV", "--top-ports", "100", "--open", "-oX", "-", target]
+        args = [nmap, "-Pn", "-sT", "-sV", "--top-ports", "100", "--open", "-oX", "-", target]
     else:
         raise ValueError(f"Unsupported Nmap job type: {job_type}")
 
