@@ -8,6 +8,25 @@ const viewHost = document.getElementById("view");
 const topTitle = document.getElementById("topTitle");
 const topSub = document.getElementById("topSub");
 const navItems = Array.from(document.querySelectorAll(".nav-item"));
+const sidebarToggle = document.getElementById("sidebarToggle");
+
+// Compact navigation is the default command-center state; the three-dot
+// control opens/closes the full navigation without changing view routing.
+document.body.classList.add("sidebar-collapsed");
+function syncSidebarToggle() {
+  const collapsed = document.body.classList.contains("sidebar-collapsed");
+  if (sidebarToggle) {
+    sidebarToggle.textContent = collapsed ? "•••" : "×";
+    sidebarToggle.setAttribute("aria-label", collapsed ? "Open navigation" : "Close navigation");
+    sidebarToggle.title = collapsed ? "Open navigation" : "Close navigation";
+  }
+}
+sidebarToggle?.addEventListener("click", () => {
+  document.body.classList.toggle("sidebar-collapsed");
+  document.body.classList.toggle("sidebar-open", !document.body.classList.contains("sidebar-collapsed"));
+  syncSidebarToggle();
+});
+syncSidebarToggle();
 
 const TITLES = {
   dashboard: ["Command Center", "Live platform posture"],
@@ -53,7 +72,15 @@ async function navigate(view) {
   viewHost.scrollTop = 0;
 }
 
-navItems.forEach((n) => n.addEventListener("click", (e) => { e.preventDefault(); navigate(n.dataset.view); }));
+navItems.forEach((n) => n.addEventListener("click", (e) => {
+  e.preventDefault();
+  navigate(n.dataset.view);
+  if (window.matchMedia("(max-width: 780px)").matches) {
+    document.body.classList.add("sidebar-collapsed");
+    document.body.classList.remove("sidebar-open");
+    syncSidebarToggle();
+  }
+}));
 
 // ---- modal close wiring ----
 document.getElementById("modalClose").addEventListener("click", closeModal);
