@@ -1912,3 +1912,10 @@ body.sidebar-open .sidebar-toggle {
     opacity: 0.22;
   }
 }
+
+
+/* Final night-Earth visibility balance. */
+.earth-backdrop.real-earth {
+  opacity: 0.37;
+  filter: saturate(1.02) brightness(0.86) contrast(1.10);
+}
