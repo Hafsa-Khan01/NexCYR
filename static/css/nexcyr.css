@@ -2091,3 +2091,23 @@ body.sidebar-open .sidebar-toggle {
   opacity: 0.29;
   filter: saturate(0.90) brightness(0.70) contrast(1.16);
 }
+
+
+/* Final Earth-only visibility/size adjustment: about one-third of dashboard. */
+.liquid-backdrop .earth-backdrop.real-earth {
+  width: min(58vw, 760px);
+  height: min(58vw, 760px);
+  right: -8vw;
+  top: 54%;
+  opacity: 0.31;
+  filter: saturate(0.90) brightness(0.68) contrast(1.16);
+}
+@media (max-width: 780px) {
+  .liquid-backdrop .earth-backdrop.real-earth {
+    width: 92vmin;
+    height: 92vmin;
+    left: 58%;
+    right: auto;
+    opacity: 0.22;
+  }
+}
