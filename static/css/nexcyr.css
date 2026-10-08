@@ -1276,9 +1276,11 @@ body.sidebar-collapsed .brand {
 }
 body.sidebar-collapsed .brand-main .name,
 body.sidebar-collapsed .sidebar .nav-group-label,
-body.sidebar-collapsed .sidebar .foot,
-body.sidebar-collapsed .nav-item:not(.active) {
-  visibility: hidden;
+body.sidebar-collapsed .sidebar .foot {
+  display: none;
+}
+body.sidebar-collapsed .sidebar .nav-item {
+  font-size: 0;
 }
 body.sidebar-collapsed .sidebar {
   overflow: hidden;
@@ -1312,12 +1314,6 @@ body.sidebar-collapsed .brand .logo {
 }
 body.sidebar-open .sidebar {
   box-shadow: 18px 0 55px rgba(0,0,0,0.58);
-}
-body.sidebar-collapsed .nav-item:not(.active) .ni {
-  visibility: visible;
-}
-body.sidebar-collapsed .nav-item.active {
-  visibility: visible;
 }
 body.sidebar-collapsed .nav-item span:not(.ni) {
   display: none;
