@@ -73,6 +73,7 @@ class AgentRegister(BaseModel):
     version: str | None = Field(default=None, max_length=40)
     capabilities: dict | None = None
     uptime: str | None = None
+    wifi_snapshot: dict | None = None
 
 
 class AgentHeartbeat(BaseModel):
@@ -81,6 +82,7 @@ class AgentHeartbeat(BaseModel):
     cpu: float | None = None
     memory: float | None = None
     uptime: str | None = None
+    wifi_snapshot: dict | None = None
 
 
 class JobCreate(BaseModel):
