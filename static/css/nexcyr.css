@@ -88,7 +88,7 @@ body::after {
    Cyber skull cursor (original SVG, skull-only)
    ============================================================ */
 :root {
-  --skull-cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M16 3.2C9.2 3.2 4.8 8 4.8 14.4c0 4.1 2.1 7.4 5.4 9.1v3.1h3.2v2h5.2v-2h3.2v-3.1c3.3-1.7 5.4-5 5.4-9.1C27.2 8 22.8 3.2 16 3.2Z' fill='%23070b12' stroke='%2322e0ff' stroke-width='1.6'/><path d='M9.3 13.8c0-2.3 1.4-3.7 3.2-3.7 1.4 0 2.4.7 3.5 1.7 1.1-1 2.1-1.7 3.5-1.7 1.8 0 3.2 1.4 3.2 3.7 0 1.9-1.2 3.3-3.2 3.3-1.3 0-2.5-.7-3.5-1.7-1 1-2.2 1.7-3.5 1.7-2 0-3.2-1.4-3.2-3.3Z' fill='%238b5cf6'/><path d='M11 19.4c1.5 1.2 3.2 1.8 5 1.8s3.5-.6 5-1.8' fill='none' stroke='%23ff2d55' stroke-width='1.6' stroke-linecap='round'/><path d='M12 22.3v3M16 22.8v3M20 22.3v3' stroke='%2322e0ff' stroke-width='1.3' stroke-linecap='round'/></svg>") 16 16, auto;
+  --skull-cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><g fill='none' stroke='%2322e0ff' stroke-width='1.5'><path d='M16 3 C9.4 3 5 7.2 5 13.7 v6.7 l3 1.9 v3.5 h16 v-3.5 l-3-1.9 v-6.7 C27 7.2 22.6 3 16 3 z'/><path d='M10 18.5 v3 M22 18.5 v3 M12 25.5 h8'/></g><circle cx='12.2' cy='13.8' r='1.7' fill='%2322e0ff'/><circle cx='19.8' cy='13.8' r='1.7' fill='%2322e0ff'/><path d='M13 19.2 Q16 21.4 19 19.2' fill='none' stroke='%238b5cf6' stroke-width='1.5'/></svg>") 16 16, auto;
 }
 
 body, .app, a, button, input, select, textarea, .clickable {
