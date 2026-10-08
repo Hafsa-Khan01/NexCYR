@@ -114,14 +114,39 @@ def create_scan(data: ScanCreate, db: Session = Depends(get_db)):
     # Prefer the target's configured scanner when the operator did not choose one.
     requested_agent_id = data.agent_id or target.preferred_agent_id
 
+    # When the operator did not pin an Agent, automatically use the first
+    # online Agent that supports this scan. This makes Nmap available across
+    # all supported scan profiles without requiring the operator to manually
+    # select an Agent every time. The target must still be explicitly
+    # authorized; the Agent only accepts structured, allowlisted jobs.
+    from models.agent import Agent
+    from services import agent_service
+    from services.agent_service import serialize_agent, serialize_job
+
+    scan_job_type = (
+        "NMAP_HOST_DISCOVERY"
+        if target.target_type == "network" and scan_type == "basic"
+        else {
+            "service": "NMAP_SERVICE_ENUMERATION",
+            "basic": "NMAP_PORT_SCAN",
+            "stealth": "NMAP_PORT_SCAN",
+        }[scan_type]
+    )
+
+    if requested_agent_id is None:
+        online_agents = db.query(Agent).order_by(Agent.id.asc()).all()
+        for candidate in online_agents:
+            if (
+                serialize_agent(candidate)["status"] == "online"
+                and agent_service.agent_supports_job(candidate, scan_job_type)
+            ):
+                requested_agent_id = candidate.id
+                break
+
     # ---- Agent routing: queue a structured job, do NOT run locally ----
     agent = None
     if requested_agent_id:
         data.agent_id = requested_agent_id
-        from models.agent import Agent
-        from services import agent_service
-        from services.agent_service import serialize_agent, serialize_job
-
         agent = db.get(Agent, data.agent_id)
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
@@ -134,15 +159,7 @@ def create_scan(data: ScanCreate, db: Session = Depends(get_db)):
                     "This target requires an authorized Agent inside the target network."
                 ),
             )
-        job_type = (
-            "NMAP_HOST_DISCOVERY"
-            if target.target_type == "network" and scan_type == "basic"
-            else {
-                "service": "NMAP_SERVICE_ENUMERATION",
-                "basic": "NMAP_PORT_SCAN",
-                "stealth": "NMAP_PORT_SCAN",
-            }[scan_type]
-        )
+        job_type = scan_job_type
         if not agent_service.agent_supports_job(agent, job_type):
             raise HTTPException(
                 status_code=409,
