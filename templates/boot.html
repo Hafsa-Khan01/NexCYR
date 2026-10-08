@@ -3,185 +3,56 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NexCYR — Booting</title>
-  <link rel="stylesheet" href="/static/css/boot.css?v=20261008-boot2" />
+  <title>NexCYR</title>
+  <link rel="stylesheet" href="/static/css/boot.css?v=20261008-boot3" />
 </head>
 <body>
-  <div class="boot" id="boot">
-    <div class="welcome">
-      <div class="kicker">Secure Channel Established</div>
-      <h1>WELCOME TO NexCYR</h1>
-      <div class="tag">AI-Powered Cybersecurity Command Center</div>
+  <main class="boot" id="boot" aria-label="NexCYR welcome screen">
+    <div class="boot-symbol" aria-hidden="true">
+      <svg viewBox="0 0 120 120" role="presentation">
+        <defs>
+          <linearGradient id="nxg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#22e0ff"/>
+            <stop offset="48%" stop-color="#8b5cf6"/>
+            <stop offset="100%" stop-color="#e11d8f"/>
+          </linearGradient>
+        </defs>
+        <path d="M60 8 L101 31 L101 89 L60 112 L19 89 L19 31 Z"
+              fill="rgba(0,0,0,.62)"
+              stroke="url(#nxg)"
+              stroke-width="3"/>
+        <path d="M39 82 V38 L81 82 V38"
+              fill="none"
+              stroke="url(#nxg)"
+              stroke-width="7"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
+      </svg>
     </div>
 
-    <div class="core">
-      <div class="ring"></div>
-      <div class="ring r2"></div>
-      <div class="ring r3"></div>
-      <div class="halo"></div>
-      <canvas id="dna" width="460" height="520"></canvas>
-    </div>
-
-    <div class="init" id="init">
-      <div class="row" data-step="0"><span class="st">▸</span><span class="nm">NexCYR Core</span><span class="ok">READY</span></div>
-      <div class="row" data-step="1"><span class="st">▸</span><span class="nm">Security Engine</span><span class="ok">READY</span></div>
-      <div class="row" data-step="2"><span class="st">▸</span><span class="nm">Analytics Engine</span><span class="ok">READY</span></div>
-      <div class="row" data-step="3"><span class="st">▸</span><span class="nm">Monitoring Engine</span><span class="ok">READY</span></div>
-      <div class="row" data-step="4"><span class="st">▸</span><span class="nm">Intelligence Engine</span><span class="ok">READY</span></div>
-      <div class="row" data-step="5"><span class="st">▸</span><span class="nm">Report Engine</span><span class="ok">READY</span></div>
-    </div>
-
-    <div class="progress"><div class="bar" id="bar"></div></div>
-    <div class="boot-foot" id="foot">Initializing secure workspace…</div>
-  </div>
+    <h1>Welcome To NexCYR</h1>
+  </main>
 
   <script>
-    // ---- Cyber DNA Core: animated double helix + data particles ----
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const canvas = document.getElementById("dna");
-    const ctx = canvas.getContext("2d");
-    const W = canvas.width, H = canvas.height;
-    const CX = W / 2, CY = H / 2;
-    const AMP = 62, VSPAN = 380, RUNGS = 22;
+    const boot = document.getElementById("boot");
+    let done = false;
 
-    const particles = Array.from({ length: 26 }, () => ({
-      t: Math.random(),
-      side: Math.random() < 0.5 ? -1 : 1,
-      speed: 0.0016 + Math.random() * 0.0026,
-      r: 1 + Math.random() * 1.8,
-    }));
-
-    let phase = 0;
-
-    function helixPoint(t, side, ph) {
-      const y = CY - VSPAN / 2 + t * VSPAN;
-      const x = CX + Math.sin(t * Math.PI * 3 + ph) * AMP * side;
-      const depth = (Math.cos(t * Math.PI * 3 + ph) * side + 1) / 2; // 0 back .. 1 front
-      return { x, y, depth };
+    function enterPlatform() {
+      if (done) return;
+      done = true;
+      boot.classList.add("fade");
+      window.setTimeout(() => {
+        window.location.href = "/dashboard?from_boot=1";
+      }, 480);
     }
 
-    function draw() {
-      ctx.clearRect(0, 0, W, H);
-
-      // rungs
-      for (let i = 0; i <= RUNGS; i++) {
-        const t = i / RUNGS;
-        const a = helixPoint(t, -1, phase);
-        const b = helixPoint(t, 1, phase);
-        const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
-        grad.addColorStop(0, "rgba(34,224,255,0.10)");
-        grad.addColorStop(0.5, "rgba(139,92,246,0.42)");
-        grad.addColorStop(1, "rgba(225,29,143,0.10)");
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = 1.1;
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-      }
-
-      // strands
-      [-1, 1].forEach((side) => {
-        ctx.beginPath();
-        for (let i = 0; i <= 120; i++) {
-          const t = i / 120;
-          const p = helixPoint(t, side, phase);
-          i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
-        }
-        ctx.strokeStyle = side === -1 ? "rgba(34,224,255,0.85)" : "rgba(167,139,250,0.85)";
-        ctx.lineWidth = 2;
-        ctx.shadowColor = side === -1 ? "#22e0ff" : "#8b5cf6";
-        ctx.shadowBlur = 12;
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-      });
-
-      // nodes on strands
-      for (let i = 0; i <= RUNGS; i++) {
-        const t = i / RUNGS;
-        [-1, 1].forEach((side) => {
-          const p = helixPoint(t, side, phase);
-          const rad = 1.6 + p.depth * 2.2;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
-          ctx.fillStyle = side === -1 ? `rgba(34,224,255,${0.35 + p.depth * 0.6})` : `rgba(167,139,250,${0.35 + p.depth * 0.6})`;
-          ctx.shadowColor = side === -1 ? "#22e0ff" : "#8b5cf6";
-          ctx.shadowBlur = 8 * p.depth;
-          ctx.fill();
-          ctx.shadowBlur = 0;
-        });
-      }
-
-      // travelling data particles
-      particles.forEach((pt) => {
-        pt.t += pt.speed;
-        if (pt.t > 1) pt.t = 0;
-        const p = helixPoint(pt.t, pt.side, phase);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, pt.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,255,255,0.85)";
-        ctx.shadowColor = "#22e0ff";
-        ctx.shadowBlur = 10;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      });
-
-      phase += reduce ? 0 : 0.028;
-      requestAnimationFrame(draw);
-    }
-
-    if (reduce) { draw(); } else { requestAnimationFrame(draw); }
-
-    // ---- boot readiness: no auto-dismiss / no countdown ----
-    // The boot screen stays visible until the user explicitly continues.
-    const rows = Array.from(document.querySelectorAll(".init .row"));
-    const bar = document.getElementById("bar");
-    const foot = document.getElementById("foot");
-    let transitionStarted = false;
-
-    function markDone(row) {
-      if (!row) return;
-      row.classList.remove("active");
-      row.classList.add("done");
-      const state = row.querySelector(".st");
-      if (state) state.textContent = "✔";
-    }
-
-    rows.forEach((row) => markDone(row));
-    bar.style.width = "100%";
-    foot.textContent = "Verifying NexCYR core health…";
-
-    async function verifyCore() {
-      try {
-        const res = await fetch("/health", { cache: "no-store" });
-        const data = await res.json().catch(() => ({}));
-
-        if (res.ok && data.status === "healthy") {
-          foot.textContent = "CORE ONLINE · PRESS ENTER / SPACE OR TAP TO CONTINUE";
-        } else {
-          foot.textContent = "CORE CHECK FAILED · PRESS ENTER / SPACE OR TAP TO CONTINUE";
-        }
-      } catch (_) {
-        foot.textContent = "CORE CHECK UNAVAILABLE · PRESS ENTER / SPACE OR TAP TO CONTINUE";
-      }
-    }
-
-    function finish() {
-      if (transitionStarted) return;
-      transitionStarted = true;
-      document.getElementById("boot").classList.add("fade");
-      window.location.href = "/dashboard?from_boot=1";
-    }
-
-    document.getElementById("boot").addEventListener("click", finish);
+    boot.addEventListener("click", enterPlatform);
     document.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        finish();
+        enterPlatform();
       }
     });
-
-    verifyCore();
   </script>
 </body>
 </html>
