@@ -36,8 +36,10 @@ class Config:
         "https://api.openai.com/v1",
     ).strip().rstrip("/")
 
-    # --- Optional path to the nmap executable ---
+    # --- Optional paths to the Nmap executable ---
     NMAP_PATH = os.getenv("NMAP_PATH", "").strip()
+    # Local NexCYR Agent can point at a portable/custom Nmap location.
+    NEXCYR_NMAP_PATH = os.getenv("NEXCYR_NMAP_PATH", "").strip()
 
     REPORTS_DIR = Path(
         os.getenv("REPORTS_DIR", str(BASE_DIR / "reports"))
@@ -54,8 +56,9 @@ class Config:
     @classmethod
     def resolve_nmap(cls):
         """Locate the nmap binary without ever accepting user input."""
-        if cls.NMAP_PATH and Path(cls.NMAP_PATH).is_file():
-            return cls.NMAP_PATH
+        for configured in (cls.NMAP_PATH, cls.NEXCYR_NMAP_PATH):
+            if configured and Path(configured).is_file():
+                return configured
 
         found = shutil.which("nmap")
         if found:
