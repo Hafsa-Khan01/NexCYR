@@ -498,8 +498,8 @@ async function scansView(container, ctx) {
       const locOpts = [["", "Cloud Scanner (built-in)"]]
         .concat(online.map((a) => [String(a.id), `NexCYR Agent · ${a.name}${a.version ? " v" + a.version : ""}`]));
       const locHint = online.length
-        ? "Basic port checks can run in Cloud. Nmap service/stealth profiles can be routed to an online Agent."
-        : "Cloud TCP port profile is available now. Nmap service/stealth profiles require an online NexCYR Agent.";
+        ? "Network targets use Nmap host discovery through the selected Agent. Service/stealth profiles also use the Agent."
+        : "Cloud TCP port profile is available for host targets. Network discovery and Nmap service/stealth profiles require an online NexCYR Agent.";
       const f = el("form", {},
         field("Target", select("target_id", authorized.length ? authorized : [["", "No authorized targets"]]),
           authorized.length ? "Only authorized targets can be scanned." : "Add and authorize a target first."),
@@ -548,7 +548,21 @@ async function scansView(container, ctx) {
         if (scan.result_summary) body.appendChild(el("p", { class: "muted", style: { margin: "12px 0" }, text: scan.result_summary }));
         const services = (scan.result_data && scan.result_data.services) || [];
         const openPorts = (scan.result_data && scan.result_data.open_ports) || [];
-        if (scan.scan_type === "basic") {
+        const hosts = (scan.result_data && scan.result_data.hosts) || [];
+
+        if (hosts.length) {
+          body.appendChild(el("div", { class: "section-title", style: { marginTop: "14px" }, text: "Live devices / hosts (" + hosts.length + ")" }));
+          body.appendChild(table(
+            [
+              { key: "address", label: "IP / Address", render: (x) => el("span", { class: "mono", text: x.address || "—" }) },
+              { key: "hostname", label: "Hostname", render: (x) => el("span", { class: "muted", text: x.hostname || "—" }) },
+              { key: "state", label: "State", render: () => badge("up", "ok") },
+            ],
+            hosts
+          ));
+        }
+
+        if (scan.scan_type === "basic" && !hosts.length) {
           body.appendChild(el("div", { class: "section-title", style: { marginTop: "14px" }, text: "Open ports (" + openPorts.length + ")" }));
           body.appendChild(openPorts.length
             ? table(
@@ -557,7 +571,7 @@ async function scansView(container, ctx) {
                 openPorts.map((port) => ({ port }))
               )
             : emptyState("No open ports", "No TCP connections were observed in the fixed NexCYR common-port profile."));
-        } else {
+        } else if (!hosts.length) {
           body.appendChild(el("div", { class: "section-title", style: { marginTop: "14px" }, text: "Detected services (" + services.length + ")" }));
           body.appendChild(services.length
             ? table([{ key: "port", label: "Port" }, { key: "state", label: "State" }, { key: "service", label: "Service" }, { key: "version", label: "Version", render: (x) => el("span", { class: "muted", text: x.version || "—" }) }], services)
@@ -1057,8 +1071,26 @@ async function wifiView(container, ctx) {
         el("h3", {}, "📶 Sensor Status"),
         el("div", { class: "kv-list" },
           kv("Sensor", sensor.sensor_status),
+          kv("Source", sensor.source || "CLOUD"),
+          kv("Agent", sensor.agent_name || "—"),
           kv("Interface", sensor.interface || "—"),
-          kv("Detail", sensor.reason || "—"))));
+          kv("Current SSID", sensor.current_ssid || "—"),
+          kv("Local network", sensor.local_network || "—"),
+          kv("Visible networks", Array.isArray(sensor.networks) ? sensor.networks.length : 0),
+          kv("Detail", sensor.reason || "—")),
+        Array.isArray(sensor.networks) && sensor.networks.length
+          ? table(
+              [
+                { key: "ssid", label: "SSID" },
+                { key: "authentication", label: "Authentication", render: (n) => badge(n.authentication || "Unknown", wifiSecClass(n.authentication)) },
+                { key: "encryption", label: "Encryption", render: (n) => el("span", { class: "muted", text: n.encryption || "—" }) },
+                { key: "channel", label: "Channel", render: (n) => el("span", { class: "mono", text: n.channel || "—" }) },
+                { key: "signal", label: "Signal", render: (n) => el("span", { class: "mono", text: n.signal || "—" }) },
+                { key: "bssid", label: "BSSID", render: (n) => el("span", { class: "mono muted", text: n.bssid || "—" }) },
+              ],
+              sensor.networks.slice(0, 50)
+            )
+          : null));
       const tbl = table(
         [
           { key: "id", label: "ID", render: (r) => el("span", { class: "mono", text: "#" + r.id }) },
