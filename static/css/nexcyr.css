@@ -1919,3 +1919,30 @@ body.sidebar-open .sidebar-toggle {
   opacity: 0.37;
   filter: saturate(1.02) brightness(0.86) contrast(1.10);
 }
+
+
+/* Final command-center right-side night Earth placement. */
+.earth-backdrop,
+.earth-backdrop.real-earth {
+  left: auto;
+  right: -5.5vw;
+  top: 54%;
+  width: min(49vw, 640px);
+  z-index: 0;
+}
+
+.earth-backdrop.real-earth {
+  opacity: 0.36;
+  filter: saturate(1.02) brightness(0.82) contrast(1.10);
+}
+
+@media (max-width: 780px) {
+  .earth-backdrop,
+  .earth-backdrop.real-earth {
+    left: 50%;
+    right: auto;
+    top: 52%;
+    width: 88vmin;
+    transform: translate(-50%, -50%);
+  }
+}
