@@ -350,24 +350,7 @@ async function assessmentsView(container, ctx) {
           { key: "risk_score", label: "Score", render: (r) => el("span", { class: "mono", text: String(r.risk_score ?? 0) }) },
           { key: "stats", label: "Targets/Scans/Findings", render: (r) => el("span", { class: "mono muted", text: `${r.stats?.targets ?? 0} / ${r.stats?.scans ?? 0} / ${r.stats?.findings ?? 0}` }) },
           { key: "created_at", label: "Created", render: (r) => el("span", { class: "muted", text: fmtDate(r.created_at) }) },
-          { label: "Actions", render: (r) => el("div", { class: "row-actions" },
-              !r.authorized
-                ? el("button", { class: "btn primary sm", text: "Authorize", title: "Authorize this target for scanning and reconnaissance", onClick: async () => {
-                    try {
-                      await endpoints.updateTarget(r.id, { authorized: true });
-                      toast("Target authorized", `${r.name || r.value} is now authorized for scanning`, "ok");
-                      reload();
-                    } catch (e) { toast("Authorization failed", e.message, "err"); }
-                  } })
-                : el("button", { class: "btn ghost sm", text: "Revoke", title: "Remove scanning authorization", onClick: () => {
-                    confirmModal("Revoke authorization", `Remove scanning authorization from "${r.name || r.value}"?`, async () => {
-                      try {
-                        await endpoints.updateTarget(r.id, { authorized: false });
-                        toast("Authorization revoked", "", "ok");
-                        reload();
-                      } catch (e) { toast("Could not revoke authorization", e.message, "err"); }
-                    }, "Revoke");
-                  } }),
+                    { label: "Actions", render: (r) => el("div", { class: "row-actions" },
               el("button", { class: "btn ghost sm", text: "Edit", onClick: () => form(r) }),
               el("button", { class: "btn danger sm", text: "Delete", onClick: () => del(r) })) },
         ],
