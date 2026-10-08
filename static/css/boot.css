@@ -215,3 +215,65 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .boot-earth { animation: none !important; }
 }
+
+
+/* Boot-only radar overlay: circular sweep over the rotating Earth. */
+.boot-earth::after {
+  content: "";
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  background:
+    conic-gradient(
+      from 0deg,
+      transparent 0deg 300deg,
+      rgba(34,224,255,0.00) 300deg,
+      rgba(34,224,255,0.08) 320deg,
+      rgba(34,224,255,0.28) 345deg,
+      rgba(139,92,246,0.10) 360deg
+    ),
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      transparent 0 18.5%,
+      rgba(34,224,255,0.055) 18.7% 18.9%,
+      transparent 19.1% 36.9%,
+      rgba(34,224,255,0.045) 37.1% 37.3%,
+      transparent 37.5% 55.4%,
+      rgba(34,224,255,0.04) 55.6% 55.8%,
+      transparent 56% 100%
+    ),
+    repeating-conic-gradient(
+      from 0deg,
+      rgba(34,224,255,0.025) 0deg 1deg,
+      transparent 1deg 12deg
+    );
+  border: 1px solid rgba(34,224,255,0.12);
+  box-shadow:
+    inset 0 0 0 1px rgba(139,92,246,0.035),
+    inset 0 0 34px rgba(34,224,255,0.06),
+    0 0 20px rgba(34,224,255,0.06);
+  mix-blend-mode: screen;
+  animation: bootRadarSweep 4.8s linear infinite;
+}
+
+.boot-earth::before {
+  content: "";
+  position: absolute;
+  inset: -1%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 29% 24%, rgba(255,255,255,0.19), transparent 12%),
+    radial-gradient(circle at 23% 20%, rgba(255,215,160,0.15), transparent 18%),
+    radial-gradient(circle at 72% 77%, rgba(0,0,0,0.70), transparent 52%),
+    linear-gradient(90deg, rgba(0,0,0,0.56), transparent 38%, rgba(0,0,0,0.74));
+  mix-blend-mode: screen;
+}
+
+@keyframes bootRadarSweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-earth::after { animation: none !important; }
+}
