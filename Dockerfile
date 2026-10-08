@@ -1,5 +1,6 @@
 # NexCYR — single-container deployment image.
-# Works unchanged on Railway, Fly.io, Render, Docker Compose and a plain VPS.
+# Works on Railway, Fly.io, Render, Docker Compose and a plain VPS.
+# Persistent storage is mounted by the deployment platform (Railway Volume, etc.).
 #
 # SECURITY NOTE: nmap is deliberately NOT installed in this image. Running port
 # scans from a shared cloud host can breach provider ToS and, worse, touch
@@ -34,7 +35,6 @@ RUN useradd --create-home --shell /usr/sbin/nologin nexcyr \
 ENV DATABASE_URL=sqlite:////data/nexcyr.db \
     REPORTS_DIR=/data/reports
 
-VOLUME ["/data"]
 
 EXPOSE 8000
 
