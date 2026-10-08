@@ -74,9 +74,12 @@ def run_nmap(target: str, service_version: bool = True) -> dict:
             ),
         }
 
-    args = [nmap_path, "-Pn"]
+    # Explicit connect scan keeps cloud/container execution compatible with
+    # the unprivileged `nexcyr` runtime user used by the deployment image.
+    # The profile is fixed and non-destructive; users cannot inject flags.
+    args = [nmap_path, "-Pn", "-sT"]
     if service_version:
-        args.append("-sV")
+        args.extend(["-sV", "--top-ports", "100", "--open"])
     args.append(target)
 
     logger.info("Running nmap against %s", target)
