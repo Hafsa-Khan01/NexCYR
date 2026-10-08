@@ -2353,3 +2353,30 @@ body.sidebar-open .sidebar-toggle {
   border: none !important;
   opacity: 0 !important;
 }
+
+
+/* Target authorization control — explicit and visible. */
+.authorization-box {
+  margin-top: 4px;
+  padding: 11px 12px;
+  border: 1px solid rgba(34,224,255,0.20);
+  border-radius: 10px;
+  background: rgba(34,224,255,0.045);
+  box-shadow: inset 0 0 18px rgba(34,224,255,0.025);
+}
+.authorization-box .section-title {
+  margin-bottom: 7px;
+  color: var(--cyan);
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+.authorization-box .check {
+  color: var(--txt);
+  font-weight: 600;
+}
+.authorization-box .check input {
+  accent-color: var(--cyan);
+  width: 16px;
+  height: 16px;
+}
