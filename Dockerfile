@@ -2,11 +2,11 @@
 # Works on Railway, Fly.io, Render, Docker Compose and a plain VPS.
 # Persistent storage is mounted by the deployment platform (Railway Volume, etc.).
 #
-# SECURITY NOTE: nmap is deliberately NOT installed in this image. Running port
-# scans from a shared cloud host can breach provider ToS and, worse, touch
-# networks you are not authorized to scan. The NexCYR Cloud therefore reports
-# NMAP_UNAVAILABLE for its own scanner and routes real scans to an enrolled
-# Agent that sits inside an explicitly authorized target network.
+# Nmap is bundled in the cloud image so every deployed NexCYR instance
+# has a real scanner available without requiring the operator's VS Code machine.
+# NexCYR still enforces explicit target authorization and fixed, non-destructive
+# scan profiles. Private/LAN targets continue to use the local NexCYR Agent
+# because the cloud container cannot see the operator's private network.
 
 FROM python:3.13-slim
 
@@ -17,6 +17,14 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=8000
 
 WORKDIR /app
+
+# Bundle Nmap into the deployment image. The binary is then present on every
+# NexCYR cloud deployment; no local Nmap executable or VS Code session is
+# required for cloud-reachable authorized targets.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends nmap \
+    && nmap --version \
+    && rm -rf /var/lib/apt/lists/*
 
 # Dependencies first so the layer is cached across code-only changes.
 COPY requirements.txt ./
