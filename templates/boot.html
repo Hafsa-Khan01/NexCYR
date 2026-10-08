@@ -132,22 +132,11 @@
 
     if (reduce) { draw(); } else { requestAnimationFrame(draw); }
 
-    // ---- initialization sequence ----
+    // ---- boot readiness: no auto-dismiss / no countdown ----
+    // The boot screen stays visible until the user explicitly continues.
     const rows = Array.from(document.querySelectorAll(".init .row"));
     const bar = document.getElementById("bar");
     const foot = document.getElementById("foot");
-    const labels = [
-      "Loading NexCYR core…",
-      "Starting security engine…",
-      "Starting analytics engine…",
-      "Starting monitoring engine…",
-      "Starting intelligence engine…",
-      "Starting report engine…",
-    ];
-
-    const total = rows.length;
-    const perStep = reduce ? 350 : 950;
-    let i = 0;
     let transitionStarted = false;
 
     function markDone(row) {
@@ -158,20 +147,22 @@
       if (state) state.textContent = "✔";
     }
 
+    rows.forEach((row) => markDone(row));
+    bar.style.width = "100%";
+    foot.textContent = "Verifying NexCYR core health…";
+
     async function verifyCore() {
-      foot.textContent = "Verifying NexCYR core health…";
       try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 1800);
-        const res = await fetch("/health", { cache: "no-store", signal: controller.signal });
-        clearTimeout(timeout);
+        const res = await fetch("/health", { cache: "no-store" });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok || data.status !== "healthy") throw new Error("unhealthy");
-        foot.textContent = "CORE ONLINE · entering command center";
-        return true;
+
+        if (res.ok && data.status === "healthy") {
+          foot.textContent = "CORE ONLINE · PRESS ENTER / SPACE OR TAP TO CONTINUE";
+        } else {
+          foot.textContent = "CORE CHECK FAILED · PRESS ENTER / SPACE OR TAP TO CONTINUE";
+        }
       } catch (_) {
-        foot.textContent = "CORE CHECK TIMEOUT · entering command center";
-        return false;
+        foot.textContent = "CORE CHECK UNAVAILABLE · PRESS ENTER / SPACE OR TAP TO CONTINUE";
       }
     }
 
@@ -179,27 +170,18 @@
       if (transitionStarted) return;
       transitionStarted = true;
       document.getElementById("boot").classList.add("fade");
-      setTimeout(() => { window.location.href = "/dashboard?from_boot=1"; }, reduce ? 0 : 700);
+      window.location.href = "/dashboard?from_boot=1";
     }
 
-    async function step() {
-      if (i > 0) markDone(rows[i - 1]);
-
-      if (i < total) {
-        rows[i].classList.add("active");
-        foot.textContent = labels[i];
-        bar.style.width = ((i + 1) / total) * 100 + "%";
-        i++;
-        setTimeout(step, perStep);
-        return;
+    document.getElementById("boot").addEventListener("click", finish);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        finish();
       }
+    });
 
-      rows.forEach(markDone);
-      bar.style.width = "100%";
-      await verifyCore();
-      setTimeout(finish, reduce ? 500 : 1200);
-    }
-    setTimeout(step, reduce ? 700 : 1200);
+    verifyCore();
   </script>
 </body>
 </html>
