@@ -2231,3 +2231,13 @@ body.sidebar-open .sidebar-toggle {
     inset 18px 12px 55px rgba(111,190,255,0.08),
     0 0 85px rgba(34,224,255,0.08) !important;
 }
+
+
+/* Earth shade removal — only the artificial overlay is removed. */
+.liquid-backdrop .earth-backdrop.real-earth::before,
+.liquid-backdrop .earth-backdrop.real-earth::after {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  mix-blend-mode: normal !important;
+}
