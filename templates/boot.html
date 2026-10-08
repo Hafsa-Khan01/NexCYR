@@ -179,7 +179,7 @@
       if (transitionStarted) return;
       transitionStarted = true;
       document.getElementById("boot").classList.add("fade");
-      setTimeout(() => { window.location.href = "/dashboard"; }, reduce ? 0 : 700);
+      setTimeout(() => { window.location.href = "/dashboard?from_boot=1"; }, reduce ? 0 : 700);
     }
 
     async function step() {
