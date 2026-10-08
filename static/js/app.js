@@ -1,6 +1,6 @@
 // NexCYR app shell — router, global search, AI status chip, boot wiring.
 import { endpoints } from "./api.js";
-import { views } from "./views.js";
+import { views } from "./views.js?v=20261008-earth1";
 import { el, toast, closeModal } from "./ui.js";
 import * as voice from "./voice.js";
 
