@@ -278,7 +278,18 @@ async function dashboardView(container, ctx) {
 
     const ask = askPanel(ctx, { title: "Ask NexCYR" });
 
-    c.appendChild(viewHead("Command Center", "Live platform posture from stored NexCYR data"));
+        c.appendChild(viewHead("Command Center", "Live platform posture from stored NexCYR data"));
+
+    /* Defer the heavy real-Earth texture until the dashboard has painted. */
+    const realEarth = document.querySelector(".liquid-backdrop .earth-backdrop");
+    const loadRealEarth = () => {
+      if (realEarth) realEarth.classList.add("real-earth");
+    };
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(loadRealEarth, { timeout: 1400 });
+    } else {
+      window.setTimeout(loadRealEarth, 850);
+    }
     c.appendChild(hero);
     c.appendChild(metrics);
     c.appendChild(el("div", { class: "grid cols-2", style: { marginTop: "16px" } }, riskPanel, miniMap));
