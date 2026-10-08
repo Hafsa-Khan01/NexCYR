@@ -193,12 +193,12 @@ client that enrolls and then talks to the agent-facing endpoints with its token:
    Cloud refuses with **`NO AVAILABLE NEXCYR AGENT`** rather than fabricating
    results.
 
-> **Do not install nmap on a public cloud host.** Scanning from Railway/Fly can
-> breach provider terms and may touch networks you are not authorized to test.
-> The container image deliberately omits nmap, so Cloud-side scans report
-> `NMAP_UNAVAILABLE` and real enumeration is routed to an enrolled Agent inside
-> the authorized network. Run nmap only on your own lab machine or on an Agent
-> you control, against targets with recorded authorization.
+> **Cloud Nmap is bundled in the deployment image.** NexCYR uses a fixed,
+> non-destructive `-Pn -sT` profile (with service/version discovery and the top
+> 100 ports where requested) so it can run under the unprivileged `nexcyr`
+> container user. Cloud scans are still restricted to targets explicitly marked
+> authorized in NexCYR. Private LAN/CIDR targets must use an enrolled Agent inside
+> that network because a public cloud container cannot reach a user's local network.
 
 ---
 
