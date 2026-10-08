@@ -344,6 +344,23 @@ async function assessmentsView(container, ctx) {
           { key: "stats", label: "Targets/Scans/Findings", render: (r) => el("span", { class: "mono muted", text: `${r.stats?.targets ?? 0} / ${r.stats?.scans ?? 0} / ${r.stats?.findings ?? 0}` }) },
           { key: "created_at", label: "Created", render: (r) => el("span", { class: "muted", text: fmtDate(r.created_at) }) },
           { label: "Actions", render: (r) => el("div", { class: "row-actions" },
+              !r.authorized
+                ? el("button", { class: "btn primary sm", text: "Authorize", title: "Authorize this target for scanning and reconnaissance", onClick: async () => {
+                    try {
+                      await endpoints.updateTarget(r.id, { authorized: true });
+                      toast("Target authorized", `${r.name || r.value} is now authorized for scanning`, "ok");
+                      reload();
+                    } catch (e) { toast("Authorization failed", e.message, "err"); }
+                  } })
+                : el("button", { class: "btn ghost sm", text: "Revoke", title: "Remove scanning authorization", onClick: () => {
+                    confirmModal("Revoke authorization", `Remove scanning authorization from "${r.name || r.value}"?`, async () => {
+                      try {
+                        await endpoints.updateTarget(r.id, { authorized: false });
+                        toast("Authorization revoked", "", "ok");
+                        reload();
+                      } catch (e) { toast("Could not revoke authorization", e.message, "err"); }
+                    }, "Revoke");
+                  } }),
               el("button", { class: "btn ghost sm", text: "Edit", onClick: () => form(r) }),
               el("button", { class: "btn danger sm", text: "Delete", onClick: () => del(r) })) },
         ],
@@ -437,7 +454,11 @@ async function targetsView(container, ctx) {
         field("Preferred scanner", select("preferred_agent_id", agentOpts),
           "Where scans of this target run from. Agents must be online and capable when a scan is routed."),
         field("Notes", textarea("notes", { placeholder: "Authorization reference, owner, window…" })),
-        el("div", { class: "field" }, checkbox("authorized", existing?.authorized ?? false, " Explicitly authorized for scanning & reconnaissance"))
+        el("div", { class: "field authorization-box" },
+          el("div", { class: "section-title", text: "Authorization" }),
+          checkbox("authorized", existing?.authorized ?? false, " I confirm this target is explicitly authorized for scanning & reconnaissance."),
+          el("div", { class: "muted", style: { fontSize: "11px", marginTop: "5px" }, text: existing?.authorized ? "This target is currently authorized." : "Scanning stays blocked until authorization is enabled." })
+        )
       );
       if (existing) {
         f.querySelector('[name="target_type"]').value = existing.target_type;
