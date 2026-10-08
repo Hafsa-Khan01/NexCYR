@@ -1642,3 +1642,168 @@ body.sidebar-open .sidebar-toggle {
     animation: none !important;
   }
 }
+
+
+/* Final visual lock: ordered command bar + deferred real NASA Earth + dashboard radar. */
+
+/* Keep the command header in a strict, non-overlapping order. */
+.app {
+  grid-template-columns: 244px minmax(0, 1fr);
+  grid-template-rows: 60px minmax(0, 1fr);
+}
+
+.brand {
+  min-width: 0;
+  padding: 0 14px;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.brand-main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1 1 auto;
+}
+
+.brand-main .logo,
+.brand-main .name {
+  flex: 0 0 auto;
+}
+
+.sidebar-toggle {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 30px;
+  margin-left: auto;
+  position: static;
+  transform: none;
+}
+
+.topbar {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(240px, 380px) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+}
+
+.topbar .title {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar .title small {
+  flex: 0 0 auto;
+  margin: 0;
+  white-space: nowrap;
+  color: var(--txt-mute);
+}
+
+.topbar .searchbox {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.topbar .status-chip {
+  flex: 0 0 auto;
+  justify-self: end;
+  white-space: nowrap;
+}
+
+/* Real Earth is activated after first paint so it never blocks the dashboard. */
+.earth-backdrop.real-earth {
+  background-color: #06111b;
+  background-image: url("https://svs.gsfc.nasa.gov/vis/a000000/a002900/a002915/bluemarble-1024.png");
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  background-position: 0 50%;
+  animation: nexRealEarthTurn 38s linear infinite;
+  opacity: 0.30;
+  filter: saturate(0.92) brightness(0.82) contrast(1.05);
+}
+
+.earth-backdrop.real-earth::before {
+  content: "";
+  position: absolute;
+  inset: -2%;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 24% 20%, rgba(255,232,190,0.24), transparent 17%),
+    radial-gradient(circle at 34% 31%, rgba(255,255,255,0.10), transparent 27%);
+  mix-blend-mode: screen;
+  z-index: 2;
+}
+
+.earth-backdrop.real-earth::after {
+  content: "";
+  position: absolute;
+  inset: -1%;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 77% 73%, rgba(0,0,0,0.86), transparent 50%),
+    linear-gradient(100deg, transparent 0 44%, rgba(0,0,0,0.18) 63%, rgba(0,0,0,0.58) 100%);
+  box-shadow:
+    inset 22px 15px 45px rgba(255,255,255,0.07),
+    inset -65px -45px 100px rgba(0,0,0,0.70),
+    0 0 92px rgba(34,224,255,0.12);
+  border: 1px solid rgba(34,224,255,0.13);
+  z-index: 3;
+}
+
+/* Dashboard globe radar: rings + sweep + center pulse. */
+.earth-backdrop .earth-radar {
+  z-index: 5;
+  opacity: 0.82;
+}
+
+@keyframes nexRealEarthTurn {
+  from { background-position: 0 50%; }
+  to { background-position: 100% 50%; }
+}
+
+@media (max-width: 980px) and (min-width: 781px) {
+  .topbar {
+    grid-template-columns: minmax(210px, 1fr) minmax(220px, 320px) auto auto;
+    gap: 9px;
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 780px) {
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+
+  .topbar .title,
+  .topbar .searchbox,
+  .topbar #aiChip,
+  .topbar #opChip {
+    min-width: 0;
+  }
+
+  .earth-backdrop.real-earth {
+    width: 88vmin;
+    height: 88vmin;
+    left: 50%;
+    right: auto;
+    opacity: 0.20;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .earth-backdrop.real-earth {
+    animation: none !important;
+  }
+}
