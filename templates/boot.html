@@ -146,7 +146,7 @@
     ];
 
     const total = rows.length;
-    const perStep = reduce ? 180 : 650;
+    const perStep = reduce ? 350 : 950;
     let i = 0;
     let transitionStarted = false;
 
@@ -197,9 +197,9 @@
       rows.forEach(markDone);
       bar.style.width = "100%";
       await verifyCore();
-      setTimeout(finish, reduce ? 250 : 900);
+      setTimeout(finish, reduce ? 500 : 1200);
     }
-    setTimeout(step, reduce ? 250 : 900);
+    setTimeout(step, reduce ? 700 : 1200);
   </script>
 </body>
 </html>
