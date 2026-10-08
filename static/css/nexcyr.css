@@ -839,3 +839,196 @@ body, .app, a, button, input, select, textarea, .clickable {
   box-shadow: none !important;
   color: var(--cyan);
 }
+
+
+/* ============================================================
+   NexCYR — Multicolor Cyber-Neon Typography
+   Black remains the dominant surface; text carries the neon spectrum.
+   ============================================================ */
+
+/* Primary headings: cyan -> violet -> magenta */
+.brand .name,
+.view-head h1,
+.panel h3,
+.section-title,
+.dashboard-hero .hero-kicker,
+.dashboard-hero .hero-copy h1,
+.hero-label {
+  background: linear-gradient(
+    90deg,
+    #22e0ff 0%,
+    #6ea8ff 28%,
+    #a78bfa 52%,
+    #e11d8f 78%,
+    #22e0ff 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  animation: nexcyrTextFlow 8s linear infinite;
+}
+
+@keyframes nexcyrTextFlow {
+  from { background-position: 0% 50%; }
+  to { background-position: 220% 50%; }
+}
+
+/* Metric labels and supporting copy get distinct neon shades. */
+.metric .k,
+.hero-status,
+.hero-copy p,
+.view-head .sub,
+.metric .n {
+  color: #78dff3 !important;
+}
+
+.metric:nth-child(4n+2) .k,
+.metric:nth-child(4n+2) .n {
+  color: #8ea8ff !important;
+}
+
+.metric:nth-child(4n+3) .k,
+.metric:nth-child(4n+3) .n {
+  color: #b39cff !important;
+}
+
+.metric:nth-child(4n) .k,
+.metric:nth-child(4n) .n {
+  color: #f08bd1 !important;
+}
+
+/* Values are intentionally high contrast but neon-tinted. */
+.metric.info .v { color: #4de9ff; }
+.metric.good .v { color: #55ffb0; }
+.metric.warn .v { color: #ffd166; }
+.metric.crit .v { color: #ff5f86; }
+
+/* Navigation text cycles through the project palette. */
+.nav-item:nth-of-type(4n+1) { color: #78eaff; }
+.nav-item:nth-of-type(4n+2) { color: #91a9ff; }
+.nav-item:nth-of-type(4n+3) { color: #b89cff; }
+.nav-item:nth-of-type(4n)   { color: #ef91d3; }
+
+.nav-item:hover,
+.nav-item.active {
+  color: #eaffff !important;
+}
+
+.nav-item .ni {
+  color: currentColor;
+  text-shadow: 0 0 9px currentColor;
+}
+
+/* Topbar / status text uses cyan-violet neon accents. */
+.topbar .title {
+  color: #c8f8ff;
+  text-shadow: 0 0 12px rgba(34,224,255,0.14);
+}
+
+.status-chip {
+  color: #9cecff;
+}
+
+.status-chip:nth-last-child(1) {
+  color: #c7b7ff;
+}
+
+.searchbox .ico {
+  color: #22e0ff;
+  text-shadow: 0 0 8px #22e0ff;
+}
+
+.searchbox input::placeholder,
+.field input::placeholder,
+.field textarea::placeholder {
+  color: #58718a;
+}
+
+/* Tables: multicolor column headers and subtle neon row text. */
+thead th:nth-child(4n+1) { color: #22e0ff; }
+thead th:nth-child(4n+2) { color: #8ea8ff; }
+thead th:nth-child(4n+3) { color: #b39cff; }
+thead th:nth-child(4n)   { color: #ef91d3; }
+
+tbody td:nth-child(4n+1) { color: #c9faff; }
+tbody td:nth-child(4n+2) { color: #c8d6ff; }
+tbody td:nth-child(4n+3) { color: #dbcfff; }
+tbody td:nth-child(4n)   { color: #f0cbe5; }
+
+/* Links/actions glow in multiple neon tones. */
+a { text-shadow: 0 0 10px rgba(34,224,255,0.07); }
+.btn.primary { color: #e8feff; }
+.btn.ghost { color: #9ec8ff; }
+.btn.danger { color: #ffbfd0; }
+
+/* AI / Ask NexCYR carries the strongest intelligence spectrum. */
+.ask .quick button:nth-child(4n+1) { color: #69edff; }
+.ask .quick button:nth-child(4n+2) { color: #9daeff; }
+.ask .quick button:nth-child(4n+3) { color: #c3a7ff; }
+.ask .quick button:nth-child(4n)   { color: #ef9cd5; }
+
+.ai-msg .who {
+  background: linear-gradient(90deg, #22e0ff, #8b5cf6, #e11d8f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+/* Footer and metadata retain readability with a cool neon tint. */
+.sidebar .foot,
+.muted,
+.state .sm,
+.field .hint {
+  color: #668aa6 !important;
+}
+
+.sidebar .foot {
+  border-top-color: rgba(34,224,255,0.16);
+}
+
+/* Keep interactive form text readable; focus states remain cyber neon. */
+.field input,
+.field select,
+.field textarea,
+.searchbox input {
+  color: #d9faff !important;
+}
+
+.field label {
+  color: #78c9de !important;
+}
+
+/* Neon spectrum dividers/accents without changing the black surface. */
+.app::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 58px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #22e0ff,
+    #8b5cf6,
+    #e11d8f,
+    #3b82f6,
+    transparent
+  );
+  box-shadow: 0 0 14px rgba(34,224,255,0.32);
+  pointer-events: none;
+  z-index: 20;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand .name,
+  .view-head h1,
+  .panel h3,
+  .section-title,
+  .dashboard-hero .hero-kicker,
+  .dashboard-hero .hero-copy h1,
+  .hero-label {
+    animation: none !important;
+  }
+}
