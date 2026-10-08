@@ -13,7 +13,7 @@
 
 html, body {
   height: 100%;
-  background: #04050a;
+  background: #000;
   color: #dbe6f5;
   font-family: "Segoe UI", system-ui, sans-serif;
   overflow: hidden;
@@ -23,29 +23,28 @@ html, body {
   position: fixed; inset: 0;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  background:
-    radial-gradient(1000px 700px at 50% 32%, rgba(59,130,246,0.14), transparent 62%),
-    radial-gradient(800px 600px at 50% 90%, rgba(139,92,246,0.14), transparent 60%),
-    #04050a;
+  background: #000;
   gap: 8px;
   transition: opacity 0.7s ease;
 }
 .boot.fade { opacity: 0; pointer-events: none; }
 
-/* subtle grid + scanlines */
+/* black field + global scanlines */
 .boot::before {
   content: ""; position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(96,220,255,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(96,220,255,0.05) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: radial-gradient(ellipse at 50% 45%, #000 30%, transparent 82%);
+  background: #000;
   pointer-events: none;
 }
 .boot::after {
   content: ""; position: absolute; inset: 0;
-  background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.022) 0 1px, transparent 1px 3px);
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(34,224,255,0.05) 0 1px,
+    transparent 1px 4px
+  );
   pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.64;
   animation: bootScan 6s linear infinite;
 }
 @keyframes bootScan { from { background-position: 0 0; } to { background-position: 0 60px; } }
@@ -127,4 +126,10 @@ html, body {
 @media (prefers-reduced-motion: reduce) {
   .boot::after, .core .ring, .core .halo, .init .row.active .st { animation: none !important; }
   .boot { transition: none; }
+}
+
+/* Master black + cyber-neon finish */
+.welcome h1 {
+  background: linear-gradient(90deg, var(--cyan), #ffffff, var(--cyan));
+  -webkit-background-clip: text; background-clip: text;
 }
