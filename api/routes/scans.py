@@ -111,9 +111,13 @@ def create_scan(data: ScanCreate, db: Session = Depends(get_db)):
             detail="Target value is not a safe scannable IP, hostname or small network.",
         )
 
+    # Prefer the target's configured scanner when the operator did not choose one.
+    requested_agent_id = data.agent_id or target.preferred_agent_id
+
     # ---- Agent routing: queue a structured job, do NOT run locally ----
     agent = None
-    if data.agent_id:
+    if requested_agent_id:
+        data.agent_id = requested_agent_id
         from models.agent import Agent
         from services import agent_service
         from services.agent_service import serialize_agent, serialize_job
@@ -130,11 +134,15 @@ def create_scan(data: ScanCreate, db: Session = Depends(get_db)):
                     "This target requires an authorized Agent inside the target network."
                 ),
             )
-        job_type = {
-            "service": "NMAP_SERVICE_ENUMERATION",
-            "basic": "NMAP_PORT_SCAN",
-            "stealth": "NMAP_PORT_SCAN",
-        }[scan_type]
+        job_type = (
+            "NMAP_HOST_DISCOVERY"
+            if target.target_type == "network" and scan_type == "basic"
+            else {
+                "service": "NMAP_SERVICE_ENUMERATION",
+                "basic": "NMAP_PORT_SCAN",
+                "stealth": "NMAP_PORT_SCAN",
+            }[scan_type]
+        )
         if not agent_service.agent_supports_job(agent, job_type):
             raise HTTPException(
                 status_code=409,
@@ -158,7 +166,11 @@ def create_scan(data: ScanCreate, db: Session = Depends(get_db)):
             target,
             agent,
             job_type,
-            {"target": target.value, "ports_profile": "safe_default"},
+            {
+                "target": target.value,
+                "ports_profile": "safe_default",
+                "discovery": job_type == "NMAP_HOST_DISCOVERY",
+            },
             scan,
             scan.assessment_id,
         )
@@ -174,6 +186,14 @@ def create_scan(data: ScanCreate, db: Session = Depends(get_db)):
         payload = serialize_scan(db, scan)
         payload["job"] = serialize_job(job, agent)
         return payload
+
+    # A CIDR/network target must be executed from an Agent. The cloud scanner
+    # cannot see the operator's private LAN and must never pretend otherwise.
+    if target.target_type == "network" and scan_type in {"basic", "service", "stealth"}:
+        raise HTTPException(
+            status_code=409,
+            detail="Network/CIDR targets require an online NexCYR Agent for discovery and scanning.",
+        )
 
     # ---- Cloud Scanner path ----
     scan = Scan(
@@ -337,10 +357,21 @@ def scans_summary(db: Session = Depends(get_db)):
     overall = calculate_overall_risk(
         [{"severity": f.severity, "risk_score": f.risk_score} for f in findings]
     )
+    from models.agent import Agent
+    from services.agent_service import serialize_agent
+
+    agents = db.query(Agent).all()
+    online_agent_nmap = any(
+        serialize_agent(a)["status"] == "online" and serialize_agent(a)["nmap_available"]
+        for a in agents
+    )
+
     return {
         "total_scans": len(scans),
         "by_status": by_status,
-        "nmap_available": nmap_available(),
+        "nmap_available": nmap_available() or online_agent_nmap,
+        "cloud_nmap_available": nmap_available(),
+        "agent_nmap_available": online_agent_nmap,
         "findings_from_scans": len(findings),
         "overall_risk_level": overall["overall_risk"],
         "overall_risk_score": overall["overall_score"],
