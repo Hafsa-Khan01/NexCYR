@@ -2084,3 +2084,10 @@ body.sidebar-open .sidebar-toggle {
     opacity: 0.18;
   }
 }
+
+
+/* Final Earth-only visibility tweak. */
+.liquid-backdrop .earth-backdrop.real-earth {
+  opacity: 0.29;
+  filter: saturate(0.90) brightness(0.70) contrast(1.16);
+}
