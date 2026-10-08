@@ -1809,19 +1809,27 @@ body.sidebar-open .sidebar-toggle {
 }
 
 
-/* Final left-side Earth placement. */
+/* Final dashboard Earth placement: compact right-side command-center corner. */
 .earth-backdrop {
-  left: -10vw;
-  right: auto;
+  left: auto;
+  right: -7vw;
   top: 50%;
+  width: min(52vw, 680px);
+  opacity: 0.27;
   transform: translateY(-50%);
 }
 
+.earth-backdrop.real-earth {
+  right: -7vw;
+}
+
 @media (max-width: 780px) {
-  .earth-backdrop {
+  .earth-backdrop,
+  .earth-backdrop.real-earth {
     left: 50%;
     right: auto;
     top: 52%;
+    width: 88vmin;
     transform: translate(-50%, -50%);
   }
 }
