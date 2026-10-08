@@ -11,8 +11,9 @@ from sqlalchemy.orm import Session
 
 from api.utils import to_iso
 from database import get_db
+from models.agent import Agent, compute_agent_status
 from models.wifi_assessment import WiFiAssessment
-from services import wifi_service
+from services import agent_service, wifi_service
 
 router = APIRouter(prefix="/api/wifi", tags=["Wi-Fi Security"])
 
@@ -81,8 +82,53 @@ def list_wifi_assessments(db: Session = Depends(get_db)):
 
 
 @router.get("/sensor/status")
-def sensor_status():
-    return wifi_service.get_wifi_sensor_status()
+def sensor_status(db: Session = Depends(get_db)):
+    local = wifi_service.get_wifi_sensor_status()
+
+    online_agents = []
+    for agent in db.query(Agent).all():
+        if compute_agent_status(agent) != "online":
+            continue
+        caps = agent_service.capabilities_of(agent)
+        if not caps.get("wifi"):
+            continue
+        health = agent_service.parse_json(agent.health)
+        snapshot = health.get("wifi_snapshot") if isinstance(health, dict) else None
+        online_agents.append({
+            "id": agent.id,
+            "name": agent.name,
+            "interface": (snapshot or {}).get("interface"),
+            "current_ssid": (snapshot or {}).get("current_ssid"),
+            "local_network": (snapshot or {}).get("local_network"),
+            "networks": (snapshot or {}).get("networks") or [],
+        })
+
+    if local.get("sensor_status") == "available":
+        local["source"] = "CLOUD"
+        local["agents"] = online_agents
+        return local
+
+    if online_agents:
+        selected = online_agents[0]
+        return {
+            "sensor_status": "available",
+            "source": "AGENT",
+            "interface": selected.get("interface"),
+            "reason": f"Wi-Fi sensor available through NexCYR Agent · {selected['name']}",
+            "agent_id": selected["id"],
+            "agent_name": selected["name"],
+            "current_ssid": selected.get("current_ssid"),
+            "local_network": selected.get("local_network"),
+            "networks": selected.get("networks") or [],
+            "agents": online_agents,
+        }
+
+    return {
+        **local,
+        "source": "CLOUD",
+        "agents": [],
+        "networks": [],
+    }
 
 
 @router.get("/assessments/{wifi_id}")
@@ -112,10 +158,36 @@ def delete_wifi_assessment(wifi_id: int, db: Session = Depends(get_db)):
 
 @router.post("/assessments/{wifi_id}/discover")
 def discover_for_assessment(wifi_id: int, db: Session = Depends(get_db)):
-    """Passive local discovery; updates the stored assessment from real data."""
+    """Passive discovery using Cloud local sensor or the first online Wi-Fi-capable Agent."""
     record = get_wifi_or_404(db, wifi_id)
     discovery = wifi_service.discover_windows_wifi_networks()
     networks = discovery.get("networks", [])
+    source = "CLOUD"
+    agent_name = None
+    interface = None
+    local_network = None
+
+    if not discovery.get("success"):
+        selected = None
+        for agent in db.query(Agent).all():
+            if compute_agent_status(agent) != "online":
+                continue
+            caps = agent_service.capabilities_of(agent)
+            if not caps.get("wifi"):
+                continue
+            snapshot = agent_service.parse_json(agent.health).get("wifi_snapshot")
+            if isinstance(snapshot, dict) and snapshot.get("networks") is not None:
+                selected = (agent, snapshot)
+                break
+
+        if selected:
+            agent, snapshot = selected
+            networks = snapshot.get("networks") or []
+            source = "AGENT"
+            agent_name = agent.name
+            interface = snapshot.get("interface")
+            local_network = snapshot.get("local_network")
+            discovery = {"success": bool(networks), "reason": None if networks else "Agent returned no visible Wi-Fi networks."}
 
     if not discovery.get("success"):
         return {
@@ -127,7 +199,7 @@ def discover_for_assessment(wifi_id: int, db: Session = Depends(get_db)):
 
     assessment = wifi_service.assess_wifi_security(networks)
     matched = next(
-        (n for n in networks if (n.get("ssid") or "") == record.ssid),
+        (n for n in networks if (n.get("ssid") or "").strip().lower() == record.ssid.strip().lower()),
         None,
     )
     if matched:
@@ -135,6 +207,13 @@ def discover_for_assessment(wifi_id: int, db: Session = Depends(get_db)):
         record.channel = str(matched.get("channel") or record.channel or "")
     if assessment:
         record.security_summary = str(assessment)[:2000]
+    record.assessment = json.dumps({
+        "source": source,
+        "agent": agent_name,
+        "interface": interface,
+        "local_network": local_network,
+        "networks": networks,
+    }, default=str)
     record.status = "completed"
     db.commit()
     db.refresh(record)
@@ -142,6 +221,10 @@ def discover_for_assessment(wifi_id: int, db: Session = Depends(get_db)):
     return {
         "success": True,
         "reason": None,
+        "source": source,
+        "agent_name": agent_name,
+        "interface": interface,
+        "local_network": local_network,
         "networks": networks,
         "assessment": serialize_wifi(record),
     }
