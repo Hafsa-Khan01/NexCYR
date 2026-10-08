@@ -73,6 +73,13 @@ export function askPanel(ctx, { contextType = null, contextId = null, title = "A
       const res = await endpoints.ai({ question: q, context_type: contextType || undefined, context_id: contextId ?? undefined });
       pending.querySelector(".txt").textContent = res.answer || "(no answer)";
       pending.querySelector(".who").appendChild(el("span", { class: "eng", text: "· " + (res.engine || "engine") }));
+
+      // NexCYR can speak the complete answer automatically when voice is enabled.
+      // The operator still has the explicit Speak/Stop controls for replay.
+      if (res.answer && voice.isVoiceEnabled()) {
+        voice.speak(res.answer);
+      }
+
       const sr = el("button", { class: "btn ghost sm", text: "🔊 Speak" });
       sr.addEventListener("click", () => { voice.speak(res.answer || ""); pending.classList.add("speaking"); voice.onVoiceState(() => { if (!voice.isSpeaking()) pending.classList.remove("speaking"); }); });
       const st = el("button", { class: "btn ghost sm", text: "Stop", onClick: () => { voice.stopSpeaking(); pending.classList.remove("speaking"); } });
