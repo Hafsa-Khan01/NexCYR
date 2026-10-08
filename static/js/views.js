@@ -173,6 +173,30 @@ async function dashboardView(container, ctx) {
     const k = d.counts;
     const riskHas = d.risk.has_data;
 
+    const hero = el("section", { class: "dashboard-hero" },
+      el("div", { class: "hero-grid" },
+        el("div", { class: "hero-copy" },
+          el("div", { class: "hero-kicker" }, "NEXCYR // SECURITY OPERATIONS"),
+          el("h1", {}, "Unified Cybersecurity Command Center"),
+          el("p", {}, "Assess authorized assets, discover exposure, correlate SOC activity, validate detections and move findings into a measurable Purple Team workflow."),
+          el("div", { class: "hero-status" },
+            el("span", { class: "hero-pulse" }),
+            el("span", {}, "Platform online"),
+            el("span", { class: "hero-divider" }, "•"),
+            el("span", { class: "hero-mono", text: "v1.0.0" })
+          )
+        ),
+        el("div", { class: "hero-actions" },
+          el("div", { class: "hero-label" }, "OPERATE"),
+          el("button", { class: "btn primary hero-btn", text: "＋ Authorized Target", onClick: () => ctx.navigate("targets") }),
+          el("button", { class: "btn hero-btn", text: "◈ New Assessment", onClick: () => ctx.navigate("assessments") }),
+          el("button", { class: "btn ghost hero-btn", text: "⌖ Run Recon", onClick: () => ctx.navigate("recon") }),
+          el("button", { class: "btn ghost hero-btn", text: "✧ Ask NexCYR", onClick: () => ctx.navigate("ai") })
+        )
+      ),
+      el("div", { class: "hero-scanline" })
+    );
+
     const metrics = el("div", { class: "grid cols-4" },
       metric("Assessments", k.assessments, "total", "info"),
       metric("Authorized Targets", k.authorized_targets, `${k.targets} total · ${k.active_targets} active`, "info"),
@@ -182,7 +206,7 @@ async function dashboardView(container, ctx) {
       metric("High", k.high_findings, "findings", k.high_findings ? "crit" : "good"),
       metric("SOC Alerts", k.open_soc_alerts, `${k.soc_alerts} total`, k.open_soc_alerts ? "warn" : "good"),
       metric("Purple Team", k.purple_team_tests, `${d.purple_team.detected} detected · ${d.purple_team.missed} missed`, "info"),
-      metric("NexCYR Agents", k.agents ?? 0, `${k.agents_online ?? 0} online`, (k.agents_online ?? 0) ? "good" : "info"),
+
     );
 
     const riskPanel = el("div", { class: "panel" },
@@ -247,6 +271,7 @@ async function dashboardView(container, ctx) {
     const ask = askPanel(ctx, { title: "Ask NexCYR" });
 
     c.appendChild(viewHead("Command Center", "Live platform posture from stored NexCYR data"));
+    c.appendChild(hero);
     c.appendChild(metrics);
     c.appendChild(el("div", { class: "grid cols-2", style: { marginTop: "16px" } }, riskPanel, miniMap));
     c.appendChild(el("div", { class: "grid cols-2", style: { marginTop: "16px" } }, recentFindings, recentSoc));
@@ -473,13 +498,13 @@ async function scansView(container, ctx) {
       const locOpts = [["", "Cloud Scanner (built-in)"]]
         .concat(online.map((a) => [String(a.id), `NexCYR Agent · ${a.name}${a.version ? " v" + a.version : ""}`]));
       const locHint = online.length
-        ? "Run from the Cloud Scanner or route to an online agent inside the target network."
-        : "NO AVAILABLE NEXCYR AGENT online — using the built-in Cloud Scanner. Agents appear here once they send a heartbeat.";
+        ? "Basic port checks can run in Cloud. Nmap service/stealth profiles can be routed to an online Agent."
+        : "Cloud TCP port profile is available now. Nmap service/stealth profiles require an online NexCYR Agent.";
       const f = el("form", {},
         field("Target", select("target_id", authorized.length ? authorized : [["", "No authorized targets"]]),
           authorized.length ? "Only authorized targets can be scanned." : "Add and authorize a target first."),
         el("div", { class: "field-row" },
-          field("Scan type", select("scan_type", [["service", "Service enumeration"], ["basic", "Basic (host/port)"], ["stealth", "Stealth"]])),
+          field("Scan type", select("scan_type", [["service", "Nmap service / version"], ["basic", "Cloud TCP port profile"], ["stealth", "Stealth Nmap (Agent only)"]])),
           field("Assessment", select("assessment_id", await assessmentOptions()))
         ),
         field("Scan location", select("agent_id", locOpts), locHint)
@@ -522,10 +547,22 @@ async function scansView(container, ctx) {
         ));
         if (scan.result_summary) body.appendChild(el("p", { class: "muted", style: { margin: "12px 0" }, text: scan.result_summary }));
         const services = (scan.result_data && scan.result_data.services) || [];
-        body.appendChild(el("div", { class: "section-title", style: { marginTop: "14px" }, text: `Detected services (${services.length})` }));
-        body.appendChild(services.length
-          ? table([{ key: "port", label: "Port" }, { key: "state", label: "State" }, { key: "service", label: "Service" }, { key: "version", label: "Version", render: (x) => el("span", { class: "muted", text: x.version || "—" }) }], services)
-          : emptyState("No services", scan.status === "nmap_unavailable" ? "Nmap unavailable — no results fabricated." : "Nothing detected."));
+        const openPorts = (scan.result_data && scan.result_data.open_ports) || [];
+        if (scan.scan_type === "basic") {
+          body.appendChild(el("div", { class: "section-title", style: { marginTop: "14px" }, text: "Open ports (" + openPorts.length + ")" }));
+          body.appendChild(openPorts.length
+            ? table(
+                [{ key: "port", label: "Port", render: (x) => el("span", { class: "mono", text: String(x.port) }) },
+                 { key: "state", label: "State", render: () => badge("open", "ok") }],
+                openPorts.map((port) => ({ port }))
+              )
+            : emptyState("No open ports", "No TCP connections were observed in the fixed NexCYR common-port profile."));
+        } else {
+          body.appendChild(el("div", { class: "section-title", style: { marginTop: "14px" }, text: "Detected services (" + services.length + ")" }));
+          body.appendChild(services.length
+            ? table([{ key: "port", label: "Port" }, { key: "state", label: "State" }, { key: "service", label: "Service" }, { key: "version", label: "Version", render: (x) => el("span", { class: "muted", text: x.version || "—" }) }], services)
+            : emptyState("No services", scan.status === "nmap_unavailable" ? "Nmap unavailable — route this profile to a NexCYR Agent." : scan.status === "agent_required" ? "This profile requires an online NexCYR Agent." : "Nothing detected."));
+        }
         const fnds = res.findings || [];
         body.appendChild(el("div", { class: "section-title", style: { marginTop: "16px" }, text: `Findings generated (${fnds.length})` }));
         body.appendChild(fnds.length
