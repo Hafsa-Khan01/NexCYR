@@ -15,6 +15,7 @@ import argparse
 import ipaddress
 import json
 import logging
+import os
 import platform
 import re
 import shutil
@@ -52,16 +53,29 @@ def run_capture(args: list[str], timeout: int = 15) -> tuple[int, str, str]:
 
 
 def find_nmap() -> str | None:
+    # Allow an explicit executable path for portable/local Nmap installs.
+    configured = os.getenv("NEXCYR_NMAP_PATH", "").strip().strip('"')
+    if configured and Path(configured).is_file():
+        return configured
+
     direct = shutil.which("nmap")
     if direct:
         return direct
+
     if sys.platform.startswith("win"):
         for candidate in (
             r"C:\Program Files\Nmap\nmap.exe",
             r"C:\Program Files (x86)\Nmap\nmap.exe",
+            str(Path.cwd() / "nmap.exe"),
+            str(Path(__file__).resolve().parents[1] / "nmap.exe"),
         ):
             if Path(candidate).is_file():
                 return candidate
+    else:
+        candidate = Path.cwd() / "nmap"
+        if candidate.is_file():
+            return str(candidate)
+
     return None
 
 
