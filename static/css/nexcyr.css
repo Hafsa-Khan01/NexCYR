@@ -1435,3 +1435,211 @@ body.sidebar-open .sidebar-toggle {
     padding-left: 58px;
   }
 }
+
+
+/* ============================================================
+   Final dashboard header alignment + Earth radar overlay.
+   Preserves the existing Earth artwork and all other dashboard UI.
+   ============================================================ */
+@media (min-width: 781px) {
+  body.sidebar-collapsed .app {
+    grid-template-columns: 190px 1fr;
+  }
+
+  body.sidebar-collapsed .brand {
+    width: auto;
+    padding: 0 12px 0 14px;
+    justify-content: flex-start;
+    gap: 10px;
+    overflow: hidden;
+  }
+
+  body.sidebar-collapsed .brand-main {
+    width: auto;
+    min-width: 0;
+    flex: 0 1 auto;
+    justify-content: flex-start;
+  }
+
+  body.sidebar-collapsed .brand-main .name {
+    display: block;
+    white-space: nowrap;
+  }
+
+  body.sidebar-collapsed .sidebar-toggle {
+    position: static;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 30px;
+    margin-left: auto;
+    transform: none;
+  }
+
+  body.sidebar-open .brand {
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+  }
+}
+
+.topbar {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) minmax(220px, 380px) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+}
+
+.topbar .title {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar .title small {
+  display: inline;
+  white-space: nowrap;
+  margin-left: 5px;
+}
+
+.topbar .title small::before {
+  content: "·";
+  margin-right: 5px;
+  color: var(--violet);
+}
+
+.searchbox {
+  width: 100%;
+  min-width: 0;
+  margin-left: 0;
+}
+
+.status-chip {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  justify-self: end;
+}
+
+.earth-backdrop {
+  position: relative;
+}
+
+.earth-radar {
+  position: absolute;
+  inset: 5%;
+  z-index: 4;
+  border-radius: 50%;
+  pointer-events: none;
+  overflow: hidden;
+  border: 1px solid rgba(34,224,255,0.13);
+  background:
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      transparent 0 17.8%,
+      rgba(34,224,255,0.055) 18% 18.35%,
+      transparent 18.55% 35.8%,
+      rgba(139,92,246,0.045) 36% 36.3%,
+      transparent 36.5% 53.8%,
+      rgba(34,224,255,0.042) 54% 54.25%,
+      transparent 54.5% 100%
+    ),
+    repeating-conic-gradient(
+      from 0deg,
+      rgba(34,224,255,0.025) 0deg 1deg,
+      transparent 1deg 15deg
+    );
+  box-shadow:
+    inset 0 0 34px rgba(34,224,255,0.055),
+    0 0 24px rgba(34,224,255,0.05);
+  mix-blend-mode: screen;
+}
+
+.earth-radar::before {
+  content: "";
+  position: absolute;
+  inset: -8%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 318deg,
+    rgba(34,224,255,0.02) 318deg,
+    rgba(34,224,255,0.12) 334deg,
+    rgba(34,224,255,0.36) 350deg,
+    rgba(139,92,246,0.13) 360deg
+  );
+  transform-origin: 50% 50%;
+  animation: dashboardRadarSweep 5.2s linear infinite;
+}
+
+.earth-radar::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgba(34,224,255,0.90);
+  box-shadow:
+    0 0 10px rgba(34,224,255,0.72),
+    0 0 22px rgba(139,92,246,0.28);
+  animation: dashboardRadarPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes dashboardRadarSweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dashboardRadarPulse {
+  0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(0.82); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+}
+
+@media (max-width: 780px) {
+  .topbar {
+    display: flex;
+    flex-wrap: wrap;
+    min-height: 58px;
+    height: auto;
+    padding: 9px 12px;
+    gap: 8px;
+  }
+
+  .topbar .title {
+    flex: 1 1 100%;
+    order: 1;
+  }
+
+  .searchbox {
+    flex: 1 1 100%;
+    order: 2;
+  }
+
+  .topbar #aiChip { order: 3; }
+  .topbar #opChip { order: 4; }
+
+  body.sidebar-collapsed .app {
+    grid-template-columns: 1fr;
+  }
+
+  body.sidebar-collapsed .brand {
+    padding-left: 14px;
+  }
+
+  body.sidebar-collapsed .sidebar-toggle {
+    position: static;
+    margin-left: auto;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .earth-radar::before,
+  .earth-radar::after {
+    animation: none !important;
+  }
+}
