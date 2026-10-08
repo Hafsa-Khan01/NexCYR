@@ -57,6 +57,7 @@ JOB_CAPABILITY = {
     "NMAP_PORT_SCAN": "port_scan",
     "NMAP_SERVICE_ENUMERATION": "service_enumeration",
     "AUTHORIZED_RECON": "host_discovery",
+    "WIFI_DISCOVERY": "wifi",
 }
 
 
@@ -222,7 +223,11 @@ def register_agent(db: Session, agent: Agent, payload: dict) -> Agent:
         for k in CAPABILITY_KEYS:
             caps[k] = bool(reported.get(k))
     agent.capabilities = json.dumps(caps)
-    agent.health = json.dumps({"registered_via": "token", "uptime": payload.get("uptime")})
+    agent.health = json.dumps({
+        "registered_via": "token",
+        "uptime": payload.get("uptime"),
+        "wifi_snapshot": payload.get("wifi_snapshot") if isinstance(payload.get("wifi_snapshot"), dict) else {},
+    })
     agent.registered_at = agent.registered_at or now
     agent.last_seen = now
     agent.status = AGENT_STATUS_ONLINE
@@ -257,6 +262,7 @@ def heartbeat(db: Session, agent: Agent, payload: dict) -> Agent:
         "memory": payload.get("memory"),
         "uptime": payload.get("uptime"),
         "reported_at": now.isoformat(),
+        "wifi_snapshot": payload.get("wifi_snapshot") if isinstance(payload.get("wifi_snapshot"), dict) else {},
     }
     agent.health = json.dumps(health)
     agent.status = AGENT_STATUS_ONLINE
@@ -353,17 +359,63 @@ def _validated_services(raw) -> list:
     return out[:500]
 
 
+def _validated_hosts(raw) -> list:
+    """Validate agent-reported host discovery records."""
+    if not isinstance(raw, list):
+        return []
+    out = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        address = str(item.get("address") or item.get("ip") or "").strip()
+        if not address or len(address) > 64:
+            continue
+        out.append({
+            "address": address,
+            "state": str(item.get("state") or "up")[:20],
+            "hostname": str(item.get("hostname") or "")[:255],
+        })
+    return out[:1024]
+
+
+def _validated_wifi_networks(raw) -> list:
+    """Validate passive Wi-Fi observations returned by a local agent."""
+    if not isinstance(raw, list):
+        return []
+    out = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        ssid = str(item.get("ssid") or "").strip()[:255]
+        if not ssid:
+            continue
+        out.append({
+            "ssid": ssid,
+            "authentication": str(item.get("authentication") or "Unknown")[:80],
+            "encryption": str(item.get("encryption") or "")[:80],
+            "channel": str(item.get("channel") or "")[:20],
+            "signal": str(item.get("signal") or "")[:20],
+            "bssid": str(item.get("bssid") or "")[:80],
+        })
+    return out[:200]
+
+
 def submit_job_result(db: Session, job: ScanJob, agent: Agent, payload: dict) -> ScanJob:
     """Ingest a structured agent result; derive findings centrally."""
     status = str(payload.get("status") or "").strip().lower()
     if status == JOB_STATUS_COMPLETED:
         results = payload.get("results") or {}
         services = _validated_services(results.get("services"))
+        hosts = _validated_hosts(results.get("hosts"))
+        wifi_networks = _validated_wifi_networks(results.get("wifi_networks"))
         job.result = json.dumps(
             {
-                "hosts": results.get("hosts") or [],
+                "hosts": hosts,
                 "ports": results.get("ports") or [],
                 "services": services,
+                "wifi_networks": wifi_networks,
+                "wifi_interface": str(results.get("wifi_interface") or "")[:120],
+                "local_network": str(results.get("local_network") or "")[:64],
             },
             default=str,
         )
@@ -374,57 +426,102 @@ def submit_job_result(db: Session, job: ScanJob, agent: Agent, payload: dict) ->
         if scan is not None:
             scan.status = "completed"
             scan.completed_at = datetime.now(timezone.utc)
-            open_services = [s for s in services if s.get("state") == "open"]
-            scan.result_summary = (
-                f"{len(open_services)} open service(s) detected via {agent.agent_key}"
-                if services
-                else f"No open services detected via {agent.agent_key}"
-            )
-            scan.result_data = json.dumps({"services": services}, default=str)
             scan.execution_source = "AGENT"
             scan.agent_id = agent.id
             scan.agent_name = agent.name
             scan.agent_version = agent.version
 
-            created = 0
-            for service, analyzed in zip(services, analyze_services(services)):
-                severity = str(analyzed.get("severity", "info")).lower()
-                if severity == "informational":
-                    severity = "info"
-                finding = Finding(
-                    assessment_id=scan.assessment_id,
-                    target_id=scan.target_id,
-                    scan_id=scan.id,
-                    title=analyzed.get("title", "Scan observation"),
-                    severity=severity,
-                    status=analyzed.get("status", "open"),
-                    description=analyzed.get("description"),
-                    evidence=analyzed.get("evidence"),
-                    remediation="; ".join(analyzed.get("recommendations", [])) or None,
-                    source=f"agent:{agent.agent_key}",
-                    confidence=analyzed.get("confidence"),
+            if job.job_type == "NMAP_HOST_DISCOVERY":
+                scan.result_summary = (
+                    f"{len(hosts)} live host(s) discovered via {agent.agent_key}"
+                    if hosts
+                    else f"No live hosts discovered via {agent.agent_key}"
                 )
-                risk = calculate_finding_risk(
-                    {
-                        "title": finding.title,
-                        "severity": severity,
-                        "port": service.get("port"),
-                        "service": service.get("service"),
-                        "version": service.get("version"),
-                        "state": service.get("state"),
-                    }
+                scan.result_data = json.dumps({"hosts": hosts}, default=str)
+                scan.error = None
+            else:
+                open_services = [s for s in services if s.get("state") == "open"]
+                scan.result_summary = (
+                    f"{len(open_services)} open service(s) detected via {agent.agent_key}"
+                    if services
+                    else f"No open services detected via {agent.agent_key}"
                 )
-                finding.risk_score = risk["risk_score"]
-                finding.risk_level = risk["risk_level"]
-                finding.risk_factors = ";".join(
-                    analyzed.get("risk_factors") or risk.get("risk_factors", [])
-                )
-                finding.recommendations = ";".join(
-                    analyzed.get("recommendations") or risk.get("recommendations", [])
-                )
-                db.add(finding)
-                created += 1
-            logger.info("Agent job %s produced %d finding(s)", job.id, created)
+                scan.result_data = json.dumps({
+                    "services": services,
+                    "hosts": hosts,
+                }, default=str)
+
+                created = 0
+                for service, analyzed in zip(services, analyze_services(services)):
+                    severity = str(analyzed.get("severity", "info")).lower()
+                    if severity == "informational":
+                        severity = "info"
+                    finding = Finding(
+                        assessment_id=scan.assessment_id,
+                        target_id=scan.target_id,
+                        scan_id=scan.id,
+                        title=analyzed.get("title", "Scan observation"),
+                        severity=severity,
+                        status=analyzed.get("status", "open"),
+                        description=analyzed.get("description"),
+                        evidence=analyzed.get("evidence"),
+                        remediation="; ".join(analyzed.get("recommendations", [])) or None,
+                        source=f"agent:{agent.agent_key}",
+                        confidence=analyzed.get("confidence"),
+                    )
+                    risk = calculate_finding_risk(
+                        {
+                            "title": finding.title,
+                            "severity": severity,
+                            "port": service.get("port"),
+                            "service": service.get("service"),
+                            "version": service.get("version"),
+                            "state": service.get("state"),
+                        }
+                    )
+                    finding.risk_score = risk["risk_score"]
+                    finding.risk_level = risk["risk_level"]
+                    finding.risk_factors = ";".join(
+                        analyzed.get("risk_factors") or risk.get("risk_factors", [])
+                    )
+                    finding.recommendations = ";".join(
+                        analyzed.get("recommendations") or risk.get("recommendations", [])
+                    )
+                    db.add(finding)
+                    created += 1
+                logger.info("Agent job %s produced %d finding(s)", job.id, created)
+
+        # Wi-Fi discovery is passive and non-disruptive. Persist the latest
+        # observation on the linked assessment when the job carries an ID.
+        if job.job_type == "WIFI_DISCOVERY":
+            params = parse_json(job.params)
+            wifi_id = params.get("wifi_assessment_id")
+            if wifi_id:
+                from models.wifi_assessment import WiFiAssessment
+                record = db.get(WiFiAssessment, int(wifi_id))
+                if record:
+                    selected = next(
+                        (n for n in wifi_networks if n["ssid"].lower() == record.ssid.lower()),
+                        None,
+                    )
+                    if selected:
+                        record.security_type = selected.get("authentication") or record.security_type
+                        record.channel = selected.get("channel") or record.channel
+                    record.assessment = json.dumps({
+                        "agent": agent.name,
+                        "interface": str(results.get("wifi_interface") or "")[:120],
+                        "local_network": str(results.get("local_network") or "")[:64],
+                        "networks": wifi_networks,
+                    }, default=str)
+                    record.findings_count = 0
+                    if selected := next((n for n in wifi_networks if n["ssid"].lower() == record.ssid.lower()), None):
+                        record.security_summary = (
+                            f"{selected.get('authentication', 'Unknown')} "
+                            f"{selected.get('encryption', '')}".strip()
+                        )
+                    else:
+                        record.security_summary = "SSID not observed by the Agent."
+                    record.status = "completed"
 
         record_audit(
             db,
