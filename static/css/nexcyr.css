@@ -2332,3 +2332,24 @@ body.sidebar-open .sidebar-toggle {
   border: none !important;
   opacity: 0 !important;
 }
+
+
+/* Earth reference finish: clean realistic blue atmosphere / city-light night globe.
+   Remove the remaining dark treatment from the Earth only. */
+.liquid-backdrop .earth-backdrop.real-earth {
+  opacity: 0.86;
+  filter: saturate(1.16) brightness(1.12) contrast(1.02) !important;
+  background-color: transparent !important;
+  box-shadow:
+    0 0 42px rgba(70,150,255,0.12),
+    0 0 95px rgba(34,224,255,0.05) !important;
+}
+.liquid-backdrop .earth-backdrop.real-earth::before,
+.liquid-backdrop .earth-backdrop.real-earth::after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  opacity: 0 !important;
+}
