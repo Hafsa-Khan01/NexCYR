@@ -586,7 +586,7 @@ async function scansView(container, ctx) {
         : "Cloud TCP port profile is available for host targets. Network discovery and Nmap service/stealth profiles require an online NexCYR Agent.";
 
       const targetSelect = select("target_id", [
-        ["", authorized.length ? "— Select one authorized target —" : "No authorized targets yet"],
+        ["", authorized.length ? "— Select a saved target or enter one below —" : "— Enter a target below —"],
         ...authorized,
       ]);
       const quickType = select("quick_target_type", [["ip", "IP address"], ["domain", "Domain"], ["host", "Hostname"], ["network", "CIDR network"]]);
@@ -647,7 +647,7 @@ async function scansView(container, ctx) {
       const quickTargetBox = el("div", { class: "quick-target-box" },
         el("div", { class: "section-title", text: "New target / IP" }),
         el("div", { class: "muted", style: { fontSize: "11px", lineHeight: "1.5", marginBottom: "10px" },
-          text: "Save one IP or target here. Not authorized is the default. Saving never starts a scan; only a target you explicitly authorize can be selected above." }),
+          text: "Enter one target here. To scan it now, choose “Authorized — I have permission” and click Run scan. NexCYR will save it and start the scan. Save target only stores it without scanning." }),
         el("div", { class: "field-row" },
           field("Target type", quickType),
           field("IP address / hostname / domain / CIDR", quickValue)
@@ -657,8 +657,8 @@ async function scansView(container, ctx) {
       );
 
       const f = el("form", {},
-        field("Authorized target", targetSelect,
-          authorized.length ? "Choose exactly one saved target. The scan API rejects non-authorized targets." : "No authorized targets saved yet. Add a target below, then explicitly authorize it if you have permission."),
+        field("Saved target (optional)", targetSelect,
+          authorized.length ? "Select a saved authorized target, or enter a new target below and confirm permission to scan it." : "You do not need to create a target first. Enter one below and explicitly confirm permission; Run scan will save it and start scanning."),
         quickTargetBox,
         el("div", { class: "field-row", style: { marginTop: "14px" } },
           field("Scan type", select("scan_type", [["service", "Nmap service / version"], ["basic", "Cloud TCP port profile"], ["stealth", "Stealth Nmap (Agent only)"]])),
@@ -672,22 +672,51 @@ async function scansView(container, ctx) {
         delete body.quick_target_type;
         delete body.quick_target_value;
         delete body.quick_target_authorized;
-        if (!body.target_id) {
-          toast("Select one authorized target", quickValue.value.trim() ? "Save the new target first, then select it above. A scan does not start when you save a target." : "Choose a saved authorized target or add one below first.", "warn");
+        const inlineValue = quickValue.value.trim();
+        const needsInlineTarget = !body.target_id;
+        if (needsInlineTarget && !inlineValue) {
+          toast("Target required", "Select a saved authorized target or enter an IP address / host below.", "warn");
+          quickValue.focus();
+          return;
+        }
+        if (needsInlineTarget && quickAuthorization.value !== "true") {
+          toast("Authorization required", "Choose “Authorized — I have permission” only for a target you own or are approved to test. No scan has started.", "warn");
+          quickAuthorization.focus();
           return;
         }
         if (!body.agent_id) delete body.agent_id;
         run.disabled = true; run.textContent = "Scanning…";
+        let inlineTarget = null;
         try {
+          if (needsInlineTarget) {
+            inlineTarget = await endpoints.createTarget({
+              name: inlineValue,
+              target_type: quickType.value,
+              value: inlineValue,
+              authorized: true,
+              status: "active",
+              assessment_id: body.assessment_id || null,
+            });
+            body.target_id = inlineTarget.id;
+            targetSelect.replaceChildren(
+              el("option", { value: "", text: "— Select one authorized target —" }),
+              ...(await authorizedTargetOptions()).map(([optionValue, label]) => el("option", { value: optionValue, text: label }))
+            );
+            targetSelect.value = String(inlineTarget.id);
+            quickValue.value = "";
+          }
           const res = await endpoints.createScan(body);
           closeModal();
           const via = res.execution_source === "AGENT" ? `via ${res.agent_name || "agent"}` : (res.status === "queued" ? "queued for agent" : "via Cloud Scanner");
           toast("Scan " + res.status, `${res.result_summary || via}`, res.status === "completed" ? "ok" : "warn");
           reload();
-        } catch (e) { toast("Scan failed", e.message, "err"); }
+        } catch (e) {
+          toast(inlineTarget ? "Target saved; scan failed" : "Scan failed",
+            inlineTarget ? `${inlineTarget.value} was saved as authorized. ${e.message}` : e.message, "err");
+        }
         finally { run.disabled = false; run.textContent = "Run scan"; }
       });
-      openModal("New scan — one authorized target", f, [
+      openModal("New scan", f, [
         el("button", { class: "btn ghost", type: "button", text: "Cancel", onClick: closeModal }),
         run
       ]);
