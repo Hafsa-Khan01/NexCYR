@@ -1644,7 +1644,10 @@ body.sidebar-open .sidebar-toggle {
 }
 
 
-/* Final visual lock: ordered command bar + deferred real NASA Earth + dashboard radar. */
+/* Earth texture credit: Solar System Scope via Wikimedia Commons, CC BY 4.0.
+   Source: https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_2k_earth_nightmap.jpg
+   The credit is kept in source, not rendered over the globe. */
+/* Final visual lock: ordered command bar + deferred real Earth texture + dashboard radar. */
 
 /* Keep the command header in a strict, non-overlapping order. */
 .app {
@@ -1722,7 +1725,7 @@ body.sidebar-open .sidebar-toggle {
 /* Real Earth is activated after first paint so it never blocks the dashboard. */
 .earth-backdrop.real-earth {
   background-color: #06111b;
-  background-image: url("https://svs.gsfc.nasa.gov/vis/a000000/a002900/a002915/bluemarble-1024.png");
+  background-image: url("https://upload.wikimedia.org/wikipedia/commons/2/2f/Solarsystemscope_texture_2k_earth_nightmap.jpg");
   background-repeat: repeat-x;
   background-size: auto 100%;
   background-position: 0 50%;
@@ -1838,7 +1841,7 @@ body.sidebar-open .sidebar-toggle {
 /* Dashboard night Earth finish: Black Marble + subtle sunlight rim. */
 /* Keep the dashboard globe real, but switch its visual mood to satellite night. */
 .earth-backdrop.real-earth {
-  background-image: url("https://svs.gsfc.nasa.gov/vis/a030000/a030900/a030919/BlackMarble_2016_global_7km_print.jpg");
+  background-image: url("https://upload.wikimedia.org/wikipedia/commons/2/2f/Solarsystemscope_texture_2k_earth_nightmap.jpg");
   background-repeat: repeat-x;
   background-size: auto 100%;
   background-position: 0 50%;
@@ -1866,7 +1869,7 @@ body.sidebar-open .sidebar-toggle {
 /* Final real night-Earth treatment for the main dashboard. */
 .earth-backdrop.real-earth {
   background-color: #01030a;
-  background-image: url("https://svs.gsfc.nasa.gov/vis/a030000/a030800/a030876/BlackMarble_2016_global_7km_print.jpg");
+  background-image: url("https://upload.wikimedia.org/wikipedia/commons/2/2f/Solarsystemscope_texture_2k_earth_nightmap.jpg");
   background-repeat: repeat-x;
   background-size: auto 100%;
   background-position: 0 50%;
@@ -1966,7 +1969,7 @@ body.sidebar-open .sidebar-toggle {
   z-index: 0;
   opacity: 0.38;
   background-color: #01030a;
-  background-image: url("https://svs.gsfc.nasa.gov/vis/a030000/a030800/a030876/BlackMarble_2016_global_7km_print.jpg");
+  background-image: url("https://upload.wikimedia.org/wikipedia/commons/2/2f/Solarsystemscope_texture_2k_earth_nightmap.jpg");
   background-repeat: repeat-x;
   background-size: auto 100%;
   background-position: 0 50%;
