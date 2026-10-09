@@ -2510,3 +2510,47 @@ body, .app, a, button, input, select, textarea, .clickable {
 body, .app, a, button, input, select, textarea, .clickable {
   cursor: var(--skull-cursor) !important;
 }
+
+/* Requested composition correction only: Earth right, black shade on its left edge. */
+@media (min-width: 781px) {
+  .liquid-backdrop .earth-backdrop.real-earth {
+    left: auto !important;
+    right: -6vw !important;
+    top: 50% !important;
+    width: min(55vw, 720px) !important;
+    height: min(55vw, 720px) !important;
+    transform: translateY(-50%) !important;
+  }
+}
+
+.liquid-backdrop .earth-backdrop.real-earth::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: 50%;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(0,0,0,0.78) 0%,
+    rgba(0,0,0,0.44) 24%,
+    rgba(0,0,0,0.14) 48%,
+    transparent 68%
+  ) !important;
+  box-shadow: none !important;
+  border: none !important;
+  opacity: 1 !important;
+  mix-blend-mode: multiply !important;
+}
+
+@media (max-width: 780px) {
+  .liquid-backdrop .earth-backdrop.real-earth {
+    left: 66% !important;
+    right: auto !important;
+    top: 52% !important;
+    width: 88vmin !important;
+    height: 88vmin !important;
+    transform: translate(-50%, -50%) !important;
+  }
+}
