@@ -12,6 +12,7 @@ from models.finding import Finding
 from models.scan import Scan
 from models.target import Target
 from services.risk_engine import calculate_finding_risk
+from services.soc_event_service import record_finding_event
 
 router = APIRouter(prefix="/api/findings", tags=["Findings"])
 
@@ -123,6 +124,9 @@ def create_finding(data: FindingCreate, db: Session = Depends(get_db)):
     )
     apply_risk_engine(finding)
     db.add(finding)
+    db.flush()
+    target = db.get(Target, finding.target_id) if finding.target_id else None
+    record_finding_event(db, finding, target)
     db.commit()
     db.refresh(finding)
     _refresh_linked_assessment(db, finding)

@@ -18,6 +18,7 @@ def to_iso(value):
     return value
 
 CATEGORY_KEYWORDS = {
+    "vulnerability": {"vulnerability", "finding", "cve", "exploit", "exposed service", "security issue"},
     "authentication": {"authentication", "auth", "login", "brute", "credential", "password", "failed attempt"},
     "network_scanning": {"scan", "port sweep", "reconnaissance", "nmap", "discovery", "sweep"},
     "privilege_escalation": {"privilege", "escalation", "sudo", "admin access", "elevation", "root"},

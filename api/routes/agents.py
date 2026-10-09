@@ -12,9 +12,12 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models.agent import Agent
 from models.scan_job import VALID_JOB_TYPES, ScanJob
+from models.finding import Finding
+from models.scan import Scan
 from models.target import Target
 from services import agent_service
 from services.agent_service import serialize_agent, serialize_job
+from services.soc_event_service import record_finding_event, record_scan_event
 
 router = APIRouter(prefix="/api/agents", tags=["NexCYR Agents"])
 
@@ -104,6 +107,24 @@ class JobStatusUpdate(BaseModel):
     error: str | None = None
 
 
+def _submit_job_and_record_soc(db: Session, job: ScanJob, agent: Agent, payload: dict) -> ScanJob:
+    # Terminal callbacks are idempotent; never reprocess completed evidence.
+    if job.status in {"completed", "failed", "cancelled"}:
+        return job
+    job = agent_service.submit_job_result(db, job, agent, payload)
+    if job.status in {"completed", "failed"} and job.scan_id:
+        scan = db.get(Scan, job.scan_id)
+        target = db.get(Target, job.target_id) if job.target_id else None
+        if scan and target:
+            findings = (db.query(Finding).filter(Finding.scan_id == scan.id)
+                        .order_by(Finding.id.asc()).all())
+            for finding in findings:
+                record_finding_event(db, finding, target)
+            record_scan_event(db, scan, target)
+            db.commit()
+    return job
+
+
 # ---------------------------------------------------------------------------
 # Agent-facing (token) — declared before /{agent_id} routes
 # ---------------------------------------------------------------------------
@@ -141,7 +162,7 @@ def agent_submit_result(
     job = db.get(ScanJob, job_id)
     if not job or job.agent_id != agent.id:
         raise HTTPException(status_code=404, detail="Job not found for this agent.")
-    job = agent_service.submit_job_result(db, job, agent, data.model_dump())
+    job = _submit_job_and_record_soc(db, job, agent, data.model_dump())
     return serialize_job(job, agent)
 
 
@@ -155,7 +176,7 @@ def agent_update_status(
     job = db.get(ScanJob, job_id)
     if not job or job.agent_id != agent.id:
         raise HTTPException(status_code=404, detail="Job not found for this agent.")
-    job = agent_service.submit_job_result(db, job, agent, data.model_dump())
+    job = _submit_job_and_record_soc(db, job, agent, data.model_dump())
     return serialize_job(job, agent)
 
 

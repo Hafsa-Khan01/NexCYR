@@ -25,6 +25,7 @@ from models.target import Target
 from services.nmap_service import is_safe_scan_value, nmap_available
 from services.recon_service import enumerate_services, run_recon
 from services.risk_engine import calculate_finding_risk, calculate_overall_risk
+from services.soc_event_service import record_finding_event, record_scan_event
 from services.vulnerability_engine import analyze_services
 
 logger = logging.getLogger("nexcyr.scans")
@@ -191,6 +192,7 @@ def create_scan(data: ScanCreate, db: Session = Depends(get_db)):
             scan,
             scan.assessment_id,
         )
+        record_scan_event(db, scan, target)
         db.commit()
         db.refresh(scan)
         db.refresh(job)
@@ -224,6 +226,8 @@ def create_scan(data: ScanCreate, db: Session = Depends(get_db)):
     db.add(scan)
     db.commit()
     db.refresh(scan)
+    record_scan_event(db, scan, target)
+    db.commit()
 
     if scan_type == "service":
         recon = enumerate_services(target.value)
@@ -286,6 +290,8 @@ def create_scan(data: ScanCreate, db: Session = Depends(get_db)):
             )
             finding.confidence = analyzed.get("confidence") or risk.get("confidence")
             db.add(finding)
+            db.flush()
+            record_finding_event(db, finding, target)
             created_findings.append(finding)
 
     scan.completed_at = datetime.now(timezone.utc)
@@ -322,6 +328,8 @@ def create_scan(data: ScanCreate, db: Session = Depends(get_db)):
         scan.error = recon.get("error") or "Scan did not complete."
         scan.result_summary = "Scan failed; no results were produced."
 
+    if scan.status in {"completed", "failed", "nmap_unavailable", "timeout"}:
+        record_scan_event(db, scan, target)
     db.commit()
     db.refresh(scan)
 

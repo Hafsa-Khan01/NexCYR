@@ -12,6 +12,7 @@ from database import get_db
 from models.recon_result import ReconResult, RECON_TYPES
 from models.target import Target
 from services import recon_service
+from services.soc_event_service import record_recon_event
 
 logger = logging.getLogger("nexcyr.recon.routes")
 
@@ -82,6 +83,8 @@ def start_recon(data: ReconRequest, db: Session = Depends(get_db)):
         result_data=recon_service.dump_result(result_data),
     )
     db.add(record)
+    db.flush()
+    record_recon_event(db, record, target, result_data)
     db.commit()
     db.refresh(record)
     return serialize_recon(record)
