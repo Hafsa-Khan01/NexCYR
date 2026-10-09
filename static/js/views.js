@@ -416,7 +416,9 @@ async function targetsView(container, ctx) {
           { key: "status", label: "Status", render: (r) => statusBadge(r.status) },
           { key: "assessment_id", label: "Assessment", render: (r) => r.assessment_id ? el("span", { class: "mono muted", text: "#" + r.assessment_id }) : el("span", { class: "muted", text: "—" }) },
           { label: "Actions", render: (r) => el("div", { class: "row-actions" },
-              !r.authorized\n                ? el("button", { class: "btn primary sm", text: "Authorize", title: "Authorize this target for scanning and reconnaissance", onClick: () => authorize(r) })\n                : el("button", { class: "btn ghost sm", text: "Authorized", title: "Scanning authorization is enabled", onClick: () => revokeAuthorization(r) }),
+              !r.authorized
+                ? el("button", { class: "btn primary sm", text: "Authorize", title: "Authorize this target for scanning and reconnaissance", onClick: () => authorize(r) })
+                : el("button", { class: "btn ghost sm", text: "Authorized", title: "Scanning authorization is enabled", onClick: () => revokeAuthorization(r) }),
               el("button", { class: "btn ghost sm", text: "Edit", onClick: () => form(r) }),
               el("button", { class: "btn danger sm", text: "Delete", onClick: () => del(r) })) },
         ],
@@ -485,7 +487,22 @@ async function targetsView(container, ctx) {
       );
     }
 
-    function revokeAuthorization(r) {\n      confirmModal(\n        "Revoke authorization",\n        `Remove scanning authorization from "${r.value}"?`,\n        async () => {\n          try {\n            await endpoints.updateTarget(r.id, { authorized: false });\n            toast("Authorization revoked", "", "ok");\n            reload();\n          } catch (e) { toast("Could not revoke authorization", e.message, "err"); }\n        },\n        "Revoke"\n      );\n    }\n\n    function del(r) {
+    function revokeAuthorization(r) {
+      confirmModal(
+        "Revoke authorization",
+        `Remove scanning authorization from "${r.value}"?`,
+        async () => {
+          try {
+            await endpoints.updateTarget(r.id, { authorized: false });
+            toast("Authorization revoked", "", "ok");
+            reload();
+          } catch (e) { toast("Could not revoke authorization", e.message, "err"); }
+        },
+        "Revoke"
+      );
+    }
+
+    function del(r) {
       confirmModal("Delete target", `Delete target "${r.value}"? Linked scans/findings referencing it may be affected.`, async () => {
         try { await endpoints.deleteTarget(r.id); toast("Target deleted", "", "ok"); reload(); }
         catch (e) { toast("Delete failed", e.message, "err"); }
@@ -1487,7 +1504,35 @@ async function agentsView(container, ctx) {
       openModal("Register NexCYR Agent", f, [el("button", { class: "btn ghost", text: "Cancel", onClick: closeModal }), create]);
     }
 
-    function showEnrollmentToken(res) {\n      const server = window.location.origin.replace(/\\/$/, "");\n      const token = String(res.enrollment_token || "");\n      const command = \`\\$env:NEXCYR_NMAP_PATH="D:\\\\NexCYR\\\\NexCYR\\\\nmap.exe"; .\\\\.venv\\\\Scripts\\\\python.exe agent\\\\nexcyr_agent.py --server "${server}" --token "${token}"\`;\n      const tokenBox = el("div", { class: "pre", style: { wordBreak: "break-all", whiteSpace: "pre-wrap" }, text: token });\n      const commandBox = el("div", { class: "pre", style: { wordBreak: "break-all", whiteSpace: "pre-wrap", marginTop: "8px", fontSize: "11px" }, text: command });\n      const body = el("div", {},\n        el("div", { class: "state", style: { textAlign: "left" } },\n          el("div", { class: "big", text: "ENROLLMENT CREATED" }),\n          el("div", { class: "sm", text: \`${res.name} · ${res.agent_key}\` })),\n        el("div", { class: "section-title", style: { marginTop: "14px" }, text: "One-time agent credential" }),\n        tokenBox,\n        el("div", { class: "section-title", style: { marginTop: "14px" }, text: "Connect this Agent to this exact server" }),\n        el("div", { class: "muted", style: { fontSize: "12px" }, text: server }),\n        commandBox,\n        el("p", { class: "muted", style: { fontSize: "12px", marginTop: "8px", color: "var(--warn, #f5c518)" }, text: "Important: a token created on localhost:8001 works only with localhost:8001. A token created on Railway works only with that Railway URL. Do not mix them." })\n      );\n      const copyToken = el("button", { class: "btn ghost", text: "Copy token", onClick: async () => {\n        try { await navigator.clipboard.writeText(token); toast("Token copied", "", "ok", 2000); }\n        catch (_) { toast("Copy blocked", "Select and copy manually", "warn"); }\n      } });\n      const copyCommand = el("button", { class: "btn primary", text: "Copy Agent command", onClick: async () => {\n        try { await navigator.clipboard.writeText(command); toast("Agent command copied", "Paste it into PowerShell on the Agent PC.", "ok", 2500); }\n        catch (_) { toast("Copy blocked", "Select the command manually", "warn"); }\n      } });\n      openModal("Agent enrollment credential", body, [el("button", { class: "btn ghost", text: "Done", onClick: closeModal }), copyToken, copyCommand]);\n    }\n\n    function showAgent(r) {
+    function showEnrollmentToken(res) {
+      const server = window.location.origin.replace(/\/$/, "");
+      const token = String(res.enrollment_token || "");
+      const command = `$env:NEXCYR_NMAP_PATH="D:\\NexCYR\\NexCYR\\nmap.exe"; .\\.venv\\Scripts\\python.exe agent\\nexcyr_agent.py --server "${server}" --token "${token}"`;
+      const tokenBox = el("div", { class: "pre", style: { wordBreak: "break-all", whiteSpace: "pre-wrap" }, text: token });
+      const commandBox = el("div", { class: "pre", style: { wordBreak: "break-all", whiteSpace: "pre-wrap", marginTop: "8px", fontSize: "11px" }, text: command });
+      const body = el("div", {},
+        el("div", { class: "state", style: { textAlign: "left" } },
+          el("div", { class: "big", text: "ENROLLMENT CREATED" }),
+          el("div", { class: "sm", text: `${res.name} · ${res.agent_key}` })),
+        el("div", { class: "section-title", style: { marginTop: "14px" }, text: "One-time agent credential" }),
+        tokenBox,
+        el("div", { class: "section-title", style: { marginTop: "14px" }, text: "Connect this Agent to this exact server" }),
+        el("div", { class: "muted", style: { fontSize: "12px" }, text: server }),
+        commandBox,
+        el("p", { class: "muted", style: { fontSize: "12px", marginTop: "8px", color: "var(--warn, #f5c518)" }, text: "Important: a token created on localhost:8001 works only with localhost:8001. A token created on Railway works only with that Railway URL. Do not mix them." })
+      );
+      const copyToken = el("button", { class: "btn ghost", text: "Copy token", onClick: async () => {
+        try { await navigator.clipboard.writeText(token); toast("Token copied", "", "ok", 2000); }
+        catch (_) { toast("Copy blocked", "Select and copy manually", "warn"); }
+      } });
+      const copyCommand = el("button", { class: "btn primary", text: "Copy Agent command", onClick: async () => {
+        try { await navigator.clipboard.writeText(command); toast("Agent command copied", "Paste it into PowerShell on the Agent PC.", "ok", 2500); }
+        catch (_) { toast("Copy blocked", "Select the command manually", "warn"); }
+      } });
+      openModal("Agent enrollment credential", body, [el("button", { class: "btn ghost", text: "Done", onClick: closeModal }), copyToken, copyCommand]);
+    }
+
+    function showAgent(r) {
       const body = el("div", {},
         el("div", { style: { display: "flex", gap: "8px", marginBottom: "12px" } }, agentStatusBadge(r.status), r.enabled ? badge("enabled", "ok") : badge("disabled", "warn")),
         el("div", { class: "kv-list" },
