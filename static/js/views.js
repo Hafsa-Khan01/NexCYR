@@ -114,10 +114,11 @@ export function askPanel(ctx, { contextType = null, contextId = null, title = "A
 // ------------------------------------------------------------------
 async function withLoading(container, fn, msg = "Loading…") {
   container.innerHTML = "";
-  container.appendChild(loadingState(msg));
+  const loader = loadingState(msg);
+  container.appendChild(loader);
   try {
-    container.innerHTML = "";
     await fn(container);
+    loader.remove();
   } catch (e) {
     container.innerHTML = "";
     container.appendChild(emptyState("Error", e.message));
@@ -292,11 +293,8 @@ async function dashboardView(container, ctx) {
     const loadRealEarth = () => {
       if (realEarth) realEarth.classList.add("real-earth");
     };
-    if ("requestIdleCallback" in window) {
-      window.requestIdleCallback(loadRealEarth, { timeout: 1400 });
-    } else {
-      window.setTimeout(loadRealEarth, 850);
-    }
+    // Give the first dashboard paint priority; the decorative remote texture loads afterward.
+    window.setTimeout(loadRealEarth, 1600);
     c.appendChild(hero);
     c.appendChild(metrics);
     c.appendChild(el("div", { class: "grid cols-2", style: { marginTop: "16px" } }, riskPanel, miniMap));
@@ -305,17 +303,19 @@ async function dashboardView(container, ctx) {
     c.appendChild(el("div", { style: { marginTop: "16px" } }, agentsPanel));
     c.appendChild(el("div", { style: { marginTop: "16px" } }, ask));
 
-    // mini attack map
-    try {
-      const mapData = await endpoints.attackMap();
-      const canvas = document.getElementById("dashMap");
-      if (canvas && mapData.has_data) {
-        const am = new AttackMap(canvas, document.getElementById("mapTip"), { onSelect: () => ctx.navigate("attackmap") });
-        am.setData(mapData);
-      } else if (canvas) {
-        canvas.replaceWith(emptyState("NO LINKED SECURITY ACTIVITY", "Link targets → scans → findings → events to populate the map."));
-      }
-    } catch (_) { /* mini map optional */ }
+    // Mini attack map is intentionally non-blocking: it must not hold up dashboard readiness.
+    void (async () => {
+      try {
+        const mapData = await endpoints.attackMap();
+        const canvas = document.getElementById("dashMap");
+        if (canvas && mapData.has_data) {
+          const am = new AttackMap(canvas, document.getElementById("mapTip"), { onSelect: () => ctx.navigate("attackmap") });
+          am.setData(mapData);
+        } else if (canvas) {
+          canvas.replaceWith(emptyState("NO LINKED SECURITY ACTIVITY", "Link targets → scans → findings → events to populate the map."));
+        }
+      } catch (_) { /* mini map is optional and never blocks initial display */ }
+    })();
   }, "Loading command center…");
 }
 
