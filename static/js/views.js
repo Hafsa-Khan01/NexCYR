@@ -425,7 +425,7 @@ async function targetsView(container, ctx) {
         rows
       );
       listHost.innerHTML = "";
-      listHost.appendChild(rows.length ? tbl : emptyState("No targets", "Add an authorized target to enable scanning and recon."));
+      listHost.appendChild(rows.length ? tbl : emptyState("No targets yet", "Choose + Add target / IP, enter an IP address in the target-value field, and keep authorization set to Not authorized until permission is confirmed."));
     }
 
     async function form(existing) {
@@ -434,42 +434,64 @@ async function targetsView(container, ctx) {
       try { agents = await endpoints.agents(); } catch (_) {}
       const agentOpts = [["", "Cloud Scanner (default)"]]
         .concat(agents.map((a) => [String(a.id), `${a.name} (${a.status})`]));
+      const targetTypes = [["ip", "IP address"], ["domain", "Domain"], ["url", "URL"], ["host", "Hostname"], ["network", "CIDR network"]];
+      const targetType = select("target_type", targetTypes);
+      const targetValue = input("value", { value: existing?.value || "", required: "true", placeholder: "192.0.2.10", autocomplete: "off" });
+      const authorization = select("authorized", [
+        ["false", "Not authorized — scanning blocked"],
+        ["true", "Authorized — I have permission"],
+      ]);
+      const updateValueHint = () => {
+        const hints = {
+          ip: "192.0.2.10 or 2001:db8::10",
+          domain: "example.com",
+          url: "https://example.com",
+          host: "server-01",
+          network: "192.0.2.0/24 (up to 256 addresses)",
+        };
+        targetValue.placeholder = hints[targetType.value] || "Enter one target value";
+      };
+      targetType.addEventListener("change", updateValueHint);
+
       const f = el("form", {},
         field("Name", input("name", { value: existing?.name || "", placeholder: "e.g. Web server" })),
-        el("div", { class: "field-row" },
-          field("Type", select("target_type", [["ip", "IP"], ["domain", "Domain"], ["url", "URL"], ["host", "Host"], ["network", "Network"]])),
-          field("Value", input("value", { value: existing?.value || "", required: "true", placeholder: "127.0.0.1 / example.com / 10.0.0.0/24" }))
-        ),
+        field("Target type", targetType),
+        field("IP address / domain / hostname / URL / CIDR", targetValue,
+          "Enter the exact IP or target in this field. Only one target is stored; no scan runs automatically."),
         el("div", { class: "field-row" },
           field("Assessment", select("assessment_id", aOpts)),
           field("Status", select("status", [["active", "Active"], ["inactive", "Inactive"], ["retired", "Retired"]]))
         ),
+        field("Authorization status", authorization,
+          "Not authorized is the safe default. Nmap and reconnaissance remain blocked until authorization is explicitly confirmed."),
         field("Preferred scanner", select("preferred_agent_id", agentOpts),
           "Where scans of this target run from. Agents must be online and capable when a scan is routed."),
-        field("Notes", textarea("notes", { placeholder: "Authorization reference, owner, window…" })),
-        el("div", { class: "field authorization-box" },
-          el("div", { class: "section-title", text: "Authorization" }),
-          checkbox("authorized", existing?.authorized ?? false, " I confirm this target is explicitly authorized for scanning & reconnaissance."),
-          el("div", { class: "muted", style: { fontSize: "11px", marginTop: "5px" }, text: existing?.authorized ? "This target is currently authorized." : "Scanning stays blocked until authorization is enabled." })
-        )
+        field("Notes", textarea("notes", { placeholder: "Owner, authorization reference, approved testing window…" }))
       );
       if (existing) {
-        f.querySelector('[name="target_type"]').value = existing.target_type;
+        targetType.value = existing.target_type;
         f.querySelector('[name="status"]').value = existing.status || "active";
         f.querySelector('[name="assessment_id"]').value = existing.assessment_id != null ? String(existing.assessment_id) : "";
         f.querySelector('[name="preferred_agent_id"]').value = existing.preferred_agent_id != null ? String(existing.preferred_agent_id) : "";
         f.querySelector('[name="notes"]').value = existing.notes || "";
       }
-      const save = el("button", { class: "btn primary", text: existing ? "Save changes" : "Add target" });
+      authorization.value = String(Boolean(existing?.authorized));
+      updateValueHint();
+
+      const save = el("button", { class: "btn primary", type: "button", text: existing ? "Save changes" : "Add target" });
       save.addEventListener("click", async () => {
-        const body = readForm(f, { numbers: ["assessment_id", "preferred_agent_id"], bools: ["authorized"], optionalEmpty: ["name", "notes"] });
+        if (!f.reportValidity()) return;
+        const body = readForm(f, { numbers: ["assessment_id", "preferred_agent_id"], optionalEmpty: ["name", "notes"] });
+        body.authorized = body.authorized === "true";
         try {
           if (existing) await endpoints.updateTarget(existing.id, body);
           else await endpoints.createTarget(body);
-          closeModal(); toast(existing ? "Target updated" : "Target added", "", "ok"); reload();
+          closeModal();
+          toast(existing ? "Target updated" : "Target added", body.authorized ? "Authorized target saved; no scan was started." : "Saved as not authorized. Scanning remains blocked.", body.authorized ? "ok" : "warn");
+          reload();
         } catch (e) { toast("Save failed", e.message, "err"); }
       });
-      openModal(existing ? `Edit target #${existing.id}` : "New authorized target", f, [el("button", { class: "btn ghost", text: "Cancel", onClick: closeModal }), save]);
+      openModal(existing ? `Edit target #${existing.id}` : "New target", f, [el("button", { class: "btn ghost", type: "button", text: "Cancel", onClick: closeModal }), save]);
     }
 
     function authorize(r) {
@@ -510,8 +532,8 @@ async function targetsView(container, ctx) {
     }
 
     const listHost = el("div", {});
-    c.appendChild(viewHead("Authorized Targets", "Scanning and recon are permitted only for authorized targets",
-      [el("button", { class: "btn primary", text: "+ Add target", onClick: () => form(null) })]));
+    c.appendChild(viewHead("Targets", "Enter an IP or target value; scans run only for explicitly authorized targets",
+      [el("button", { class: "btn primary", text: "+ Add target / IP", type: "button", onClick: () => form(null) })]));
     c.appendChild(el("div", { class: "panel" }, listHost));
     await reload();
   });
@@ -562,19 +584,98 @@ async function scansView(container, ctx) {
       const locHint = online.length
         ? "Network targets use Nmap host discovery through the selected Agent. Service/stealth profiles also use the Agent."
         : "Cloud TCP port profile is available for host targets. Network discovery and Nmap service/stealth profiles require an online NexCYR Agent.";
-      const f = el("form", {},
-        field("Target", select("target_id", authorized.length ? authorized : [["", "No authorized targets"]]),
-          authorized.length ? "Only authorized targets can be scanned." : "Add and authorize a target first."),
+
+      const targetSelect = select("target_id", [
+        ["", authorized.length ? "— Select one authorized target —" : "No authorized targets yet"],
+        ...authorized,
+      ]);
+      const quickType = select("quick_target_type", [["ip", "IP address"], ["domain", "Domain"], ["host", "Hostname"], ["network", "CIDR network"]]);
+      const quickValue = input("quick_target_value", { placeholder: "192.0.2.10", autocomplete: "off" });
+      const quickAuthorization = select("quick_target_authorized", [
+        ["false", "Not authorized — save only, no scan"],
+        ["true", "Authorized — I have permission"],
+      ]);
+      quickType.addEventListener("change", () => {
+        const hints = {
+          ip: "192.0.2.10 or 2001:db8::10",
+          domain: "example.com",
+          host: "server-01",
+          network: "192.0.2.0/24 (up to 256 addresses)",
+        };
+        quickValue.placeholder = hints[quickType.value] || "Enter one target value";
+      });
+
+      const quickAdd = el("button", { class: "btn ghost", type: "button", text: "Save target only" });
+      quickAdd.addEventListener("click", async () => {
+        const value = quickValue.value.trim();
+        if (!value) {
+          toast("Target value required", "Enter the IP address, hostname, domain or CIDR first.", "warn");
+          quickValue.focus();
+          return;
+        }
+        quickAdd.disabled = true;
+        quickAdd.textContent = "Saving…";
+        const authorizedChoice = quickAuthorization.value === "true";
+        try {
+          const created = await endpoints.createTarget({
+            name: value,
+            target_type: quickType.value,
+            value,
+            authorized: authorizedChoice,
+            status: "active",
+          });
+          quickValue.value = "";
+          if (created.authorized) {
+            const refreshed = await authorizedTargetOptions();
+            targetSelect.replaceChildren(
+              el("option", { value: "", text: "— Select one authorized target —" }),
+              ...refreshed.map(([optionValue, label]) => el("option", { value: optionValue, text: label }))
+            );
+            targetSelect.value = String(created.id);
+            toast("Authorized target saved", "It is selected now. Press Run scan only when you are ready.", "ok");
+          } else {
+            toast("Target saved as not authorized", "No scan was started. Confirm permission before authorizing it in Targets.", "warn");
+          }
+        } catch (e) {
+          toast("Target save failed", e.message, "err");
+        } finally {
+          quickAdd.disabled = false;
+          quickAdd.textContent = "Save target only";
+        }
+      });
+
+      const quickTargetBox = el("div", { class: "quick-target-box" },
+        el("div", { class: "section-title", text: "New target / IP" }),
+        el("div", { class: "muted", style: { fontSize: "11px", lineHeight: "1.5", marginBottom: "10px" },
+          text: "Save one IP or target here. Not authorized is the default. Saving never starts a scan; only a target you explicitly authorize can be selected above." }),
         el("div", { class: "field-row" },
+          field("Target type", quickType),
+          field("IP address / hostname / domain / CIDR", quickValue)
+        ),
+        field("Authorization status", quickAuthorization),
+        el("div", { class: "quick-target-actions" }, quickAdd)
+      );
+
+      const f = el("form", {},
+        field("Authorized target", targetSelect,
+          authorized.length ? "Choose exactly one saved target. The scan API rejects non-authorized targets." : "No authorized targets saved yet. Add a target below, then explicitly authorize it if you have permission."),
+        quickTargetBox,
+        el("div", { class: "field-row", style: { marginTop: "14px" } },
           field("Scan type", select("scan_type", [["service", "Nmap service / version"], ["basic", "Cloud TCP port profile"], ["stealth", "Stealth Nmap (Agent only)"]])),
           field("Assessment", select("assessment_id", await assessmentOptions()))
         ),
         field("Scan location", select("agent_id", locOpts), locHint)
       );
-      const run = el("button", { class: "btn primary", text: "Run scan" });
+      const run = el("button", { class: "btn primary", type: "button", text: "Run scan" });
       run.addEventListener("click", async () => {
         const body = readForm(f, { numbers: ["target_id", "assessment_id", "agent_id"] });
-        if (!body.target_id) { toast("No authorized target selected", "", "warn"); return; }
+        delete body.quick_target_type;
+        delete body.quick_target_value;
+        delete body.quick_target_authorized;
+        if (!body.target_id) {
+          toast("Select one authorized target", quickValue.value.trim() ? "Save the new target first, then select it above. A scan does not start when you save a target." : "Choose a saved authorized target or add one below first.", "warn");
+          return;
+        }
         if (!body.agent_id) delete body.agent_id;
         run.disabled = true; run.textContent = "Scanning…";
         try {
@@ -586,7 +687,10 @@ async function scansView(container, ctx) {
         } catch (e) { toast("Scan failed", e.message, "err"); }
         finally { run.disabled = false; run.textContent = "Run scan"; }
       });
-      openModal("New authorized scan", f, [el("button", { class: "btn ghost", text: "Cancel", onClick: closeModal }), run]);
+      openModal("New scan — one authorized target", f, [
+        el("button", { class: "btn ghost", type: "button", text: "Cancel", onClick: closeModal }),
+        run
+      ]);
     }
 
     async function showResults(r) {
@@ -691,7 +795,7 @@ async function reconView(container, ctx) {
     async function form() {
       const tOpts = await authorizedTargetOptions();
       const f = el("form", {},
-        field("Target", select("target_id", tOpts.length ? tOpts : [["", "No authorized targets"]])),
+        field("Authorized target", select("target_id", [["", tOpts.length ? "— Select one authorized target —" : "No authorized targets"], ...tOpts])),
         el("div", { class: "field-row" },
           field("Recon type", select("recon_type", [["host_discovery", "Host discovery"], ["port_discovery", "Port discovery"], ["service_enumeration", "Service enumeration"]])),
           field("Assessment", select("assessment_id", await assessmentOptions()))
@@ -1591,7 +1695,7 @@ async function agentsView(container, ctx) {
       }
       const tOpts = await authorizedTargetOptions();
       const f = el("form", {},
-        field("Authorized target", select("target_id", tOpts.length ? tOpts : [["", "No authorized targets"]]),
+        field("Authorized target", select("target_id", [["", tOpts.length ? "— Select one authorized target —" : "No authorized targets"], ...tOpts]),
           tOpts.length ? "Only explicitly authorized targets may be scanned." : "Add and authorize a target first."),
         field("Job type", select("job_type", JOB_TYPE_OPTIONS)),
         el("div", { class: "field-row" },
