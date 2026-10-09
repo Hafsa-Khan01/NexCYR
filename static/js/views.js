@@ -179,12 +179,91 @@ async function assessmentOptions() {
   return [["", "— none —"]].concat(a.map((x) => [String(x.id), x.name]));
 }
 
+const DASHBOARD_SOUND_KEY = "nexcyr.dashboard.soundAlerts";
+const DASHBOARD_ANNOUNCE_KEY = "nexcyr.dashboard.announcements";
+let dashboardRefreshTimer = null;
+let dashboardAudioContext = null;
+
+function dashboardPreference(key) {
+  try { return window.localStorage.getItem(key) === "true"; } catch (_) { return false; }
+}
+function setDashboardPreference(key, enabled) {
+  try { window.localStorage.setItem(key, enabled ? "true" : "false"); } catch (_) {}
+}
+function primeDashboardAudio() {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return false;
+    if (!dashboardAudioContext) dashboardAudioContext = new AudioContextClass();
+    if (dashboardAudioContext.state === "suspended") dashboardAudioContext.resume().catch(() => {});
+    return true;
+  } catch (_) { return false; }
+}
+function playDashboardAlertTone() {
+  if (!dashboardAudioContext && !primeDashboardAudio()) return;
+  try {
+    const context = dashboardAudioContext;
+    if (context.state === "suspended") context.resume().catch(() => {});
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const start = context.currentTime;
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(880, start);
+    gain.gain.setValueAtTime(0.001, start);
+    gain.gain.exponentialRampToValueAtTime(0.12, start + 0.025);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.24);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.25);
+  } catch (_) {}
+}
+function dashboardSpeechText(d) {
+  const c = d?.counts || {};
+  const risk = d?.risk || {};
+  const sev = risk.severity_distribution || {};
+  const parts = [
+    "NexCYR dashboard summary.",
+    `${c.assessments || 0} assessments. ${c.authorized_targets || 0} authorized targets. ${c.scans || 0} recorded scans.`,
+    `${c.open_findings || 0} open findings, including ${c.critical_findings || 0} critical and ${c.high_findings || 0} high severity findings.`,
+    `${c.open_soc_alerts || 0} open SOC alerts, from ${c.soc_alerts || 0} total recorded SOC events.`,
+    `Overall risk posture: ${risk.level || "unknown"}, score ${risk.score ?? 0} out of 100.`,
+    `Severity distribution: ${sev.critical || 0} critical, ${sev.high || 0} high, ${sev.medium || 0} medium, ${sev.low || 0} low, ${sev.info || 0} informational.`,
+    `Purple Team: ${d?.purple_team?.total || 0} tests, ${d?.purple_team?.detected || 0} detected, ${d?.purple_team?.missed || 0} missed detections.`
+  ];
+  (d?.recent_findings || []).slice(0, 5).forEach((f) => parts.push(
+    `Finding ${f.severity || "unknown"}: ${f.title || "untitled"}; status ${f.status || "unknown"}.`
+  ));
+  (d?.recent_soc_events || []).slice(0, 5).forEach((e) => parts.push(
+    `SOC ${e.severity || "info"} event: ${e.message || e.event_type || "recorded event"}.`
+  ));
+  (d?.correlation?.clusters || []).slice(0, 3).forEach((cl) => parts.push(
+    `Correlation: ${cl.category?.replace(/_/g, " ") || "activity"}; ${cl.event_count || 0} event(s), highest severity ${cl.max_severity || "unknown"}.`
+  ));
+  (d?.agents || []).slice(0, 4).forEach((a) => parts.push(
+    `Agent ${a.name || a.agent_key || a.id}: ${a.status || "unknown"}.`
+  ));
+  return parts.join(" ").slice(0, 3800);
+}
+
 // ------------------------------------------------------------------
 // VIEW: Dashboard
 // ------------------------------------------------------------------
 async function dashboardView(container, ctx) {
+  if (dashboardRefreshTimer) {
+    window.clearInterval(dashboardRefreshTimer);
+    dashboardRefreshTimer = null;
+  }
+  let latestDashboardData = null;
+  const seenFindingIds = new Set();
+  const seenSocIds = new Set();
+  let refreshInFlight = false;
+
   await withLoading(container, async (c) => {
     const d = await endpoints.dashboard();
+    latestDashboardData = d;
+    (d.recent_findings || []).forEach((f) => seenFindingIds.add(f.id));
+    (d.recent_soc_events || []).forEach((e) => seenSocIds.add(e.id));
     const k = d.counts;
     const riskHas = d.risk.has_data;
 
@@ -212,7 +291,7 @@ async function dashboardView(container, ctx) {
       el("div", { class: "hero-scanline" })
     );
 
-    const metrics = el("div", { class: "grid cols-4" },
+    const metrics = el("div", { class: "grid cols-4", id: "dashMetrics" },
       metric("Assessments", k.assessments, "total", "info"),
       metric("Authorized Targets", k.authorized_targets, `${k.targets} total · ${k.active_targets} active`, "info"),
       metric("Scans", k.scans, "recorded", "info"),
@@ -220,12 +299,14 @@ async function dashboardView(container, ctx) {
       metric("Critical", k.critical_findings, "findings", k.critical_findings ? "crit" : "good"),
       metric("High", k.high_findings, "findings", k.high_findings ? "crit" : "good"),
       metric("SOC Alerts", k.open_soc_alerts, `${k.soc_alerts} total`, k.open_soc_alerts ? "warn" : "good"),
-      metric("Purple Team", k.purple_team_tests, `${d.purple_team.detected} detected · ${d.purple_team.missed} missed`, "info"),
-
+      metric("Purple Team", k.purple_team_tests, `${d.purple_team.detected} detected · ${d.purple_team.missed} missed`, "info")
     );
+    metrics.querySelectorAll(".metric").forEach((card) => {
+      const label = card.querySelector(".k")?.textContent;
+      if (label) card.dataset.dashboardMetric = label;
+    });
 
-    const riskPanel = el("div", { class: "panel" },
-      el("h3", {}, "Overall Risk Posture"),
+    const riskBody = el("div", { id: "dashRiskBody" },
       riskHas
         ? el("div", { class: "risk-hero" }, gauge(d.risk.score, d.risk.level),
             el("div", { style: { flex: "1" } },
@@ -234,40 +315,51 @@ async function dashboardView(container, ctx) {
         : el("div", { class: "state" }, el("div", { class: "big", text: "NO RECORDED SECURITY FINDINGS" }),
             el("div", { class: "sm", text: d.risk.empty_message || "Create findings to populate risk posture." }))
     );
+    const riskPanel = el("div", { class: "panel", id: "dashRiskPanel" },
+      el("h3", {}, "Overall Risk Posture"), riskBody
+    );
 
-    const recentFindings = el("div", { class: "panel" },
-      el("h3", {}, "⚠ Recent Findings", el("span", { class: "tag", onClick: () => ctx.navigate("findings"), text: "view all", style: { cursor: "pointer", color: "var(--cyan)" } })),
+    const recentFindingsBody = el("div", { id: "dashRecentFindingsBody" },
       d.recent_findings.length
         ? el("div", { class: "feed" }, d.recent_findings.map((f) => feedRow("⚠", f.title, `${sevText(f.severity)} · ${f.status} · ${fmtDate(f.created_at)}`, normSev(f.severity), () => ctx.navigate("findings"))))
         : emptyState("No findings yet", "Findings appear here once recorded.")
     );
+    const recentFindings = el("div", { class: "panel", id: "dashRecentFindings" },
+      el("h3", {}, "⚠ Recent Findings", el("span", { class: "tag", onClick: () => ctx.navigate("findings"), text: "view all", style: { cursor: "pointer", color: "var(--cyan)" } })),
+      recentFindingsBody
+    );
 
-    const recentSoc = el("div", { class: "panel" },
-      el("h3", {}, "◉ Recent SOC Activity", el("span", { class: "tag", onClick: () => ctx.navigate("soc"), text: "view all", style: { cursor: "pointer", color: "var(--cyan)" } })),
+    const recentSocBody = el("div", { id: "dashRecentSocBody" },
       d.recent_soc_events.length
         ? el("div", { class: "feed" }, d.recent_soc_events.map((e) => feedRow("◉", e.message, `${e.event_type} · ${sevText(e.severity)} · ${fmtDate(e.created_at)}`, normSev(e.severity), () => ctx.navigate("soc"))))
         : emptyState("No SOC events", "Recorded security events appear here.")
     );
+    const recentSoc = el("div", { class: "panel", id: "dashRecentSoc" },
+      el("h3", {}, "◉ Recent SOC Activity", el("span", { class: "tag", onClick: () => ctx.navigate("soc"), text: "view all", style: { cursor: "pointer", color: "var(--cyan)" } })),
+      recentSocBody
+    );
 
-    const correlation = el("div", { class: "panel" },
-      el("h3", {}, "Event Correlation"),
+    const correlationBody = el("div", { id: "dashCorrelationBody" },
       d.correlation.clusters.length
         ? el("div", { class: "feed" }, d.correlation.clusters.map((cl) =>
             feedRow("⧉", `${cl.category.replace(/_/g, " ")} cluster`, `${cl.event_count} event(s) · max severity ${sevText(cl.max_severity)} · ${cl.assessment || "platform"}`, normSev(cl.max_severity), () => ctx.navigate("soc"))))
         : emptyState("NO CORRELATED ACTIVITY", "Correlation runs on stored SOC events.")
     );
+    const correlation = el("div", { class: "panel", id: "dashCorrelation" },
+      el("h3", {}, "Event Correlation"), correlationBody
+    );
 
-    const activity = el("div", { class: "panel" },
-      el("h3", {}, "Recent Activity"),
+    const activityBody = el("div", { id: "dashRecentActivityBody" },
       d.recent_activity.length
         ? el("div", { class: "feed" }, d.recent_activity.map((a) => feedRow(a.kind === "finding" ? "⚠" : "◉", a.label, `${a.kind.replace("_", " ")} · ${sevText(a.severity)} · ${fmtDate(a.at)}`, normSev(a.severity))))
         : emptyState("No activity yet")
     );
+    const activity = el("div", { class: "panel", id: "dashRecentActivity" },
+      el("h3", {}, "Recent Activity"), activityBody
+    );
 
     const agents = d.agents || [];
-    const agentsPanel = el("div", { class: "panel" },
-      el("h3", {}, "⬢ NexCYR Agents",
-        el("span", { class: "tag", onClick: () => ctx.navigate("agents"), text: "manage", style: { cursor: "pointer", color: "var(--cyan)" } })),
+    const agentsBody = el("div", { id: "dashAgentsBody" },
       agents.length
         ? el("div", { class: "feed" }, agents.slice(0, 6).map((a) => feedRow(
             "⬢",
@@ -276,6 +368,11 @@ async function dashboardView(container, ctx) {
             a.status === "online" ? "low" : a.status === "degraded" ? "medium" : "info",
             () => ctx.navigate("agents"))))
         : emptyState("NO NEXCYR AGENTS", "Cloud Scanner is active. Register an agent to scan from inside a target network.")
+    );
+    const agentsPanel = el("div", { class: "panel", id: "dashAgentsPanel" },
+      el("h3", {}, "⬢ NexCYR Agents",
+        el("span", { class: "tag", onClick: () => ctx.navigate("agents"), text: "manage", style: { cursor: "pointer", color: "var(--cyan)" } })),
+      agentsBody
     );
 
     const miniMap = el("div", { class: "panel map-wrap" },
@@ -286,7 +383,43 @@ async function dashboardView(container, ctx) {
 
     const ask = askPanel(ctx, { title: "Ask NexCYR" });
 
-        c.appendChild(viewHead("Command Center", "Live platform posture from stored NexCYR data"));
+    function renderDashboardAlertButtons() {
+      soundToggle.textContent = dashboardPreference(DASHBOARD_SOUND_KEY) ? "🔔 Sound alerts ON" : "🔕 Sound alerts OFF";
+      announceToggle.textContent = dashboardPreference(DASHBOARD_ANNOUNCE_KEY) ? "🗣 Speak alerts ON" : "🗣 Speak alerts OFF";
+      soundToggle.classList.toggle("primary", dashboardPreference(DASHBOARD_SOUND_KEY));
+      announceToggle.classList.toggle("primary", dashboardPreference(DASHBOARD_ANNOUNCE_KEY));
+    }
+    const soundToggle = el("button", { class: "btn ghost sm", onClick: () => {
+      const enabled = !dashboardPreference(DASHBOARD_SOUND_KEY);
+      setDashboardPreference(DASHBOARD_SOUND_KEY, enabled);
+      if (enabled) primeDashboardAudio();
+      renderDashboardAlertButtons();
+      toast(enabled ? "Sound alerts enabled" : "Sound alerts disabled",
+        enabled ? "New medium, high and critical findings can play a tone." : "No sound will play for new findings.", "info", 2500);
+    } });
+    const announceToggle = el("button", { class: "btn ghost sm", onClick: () => {
+      const enabled = !dashboardPreference(DASHBOARD_ANNOUNCE_KEY);
+      setDashboardPreference(DASHBOARD_ANNOUNCE_KEY, enabled);
+      renderDashboardAlertButtons();
+      if (enabled && !voice.isVoiceEnabled()) {
+        toast("Voice output is disabled", "Enable Voice output in Settings to hear dashboard alerts.", "warn");
+      } else {
+        toast(enabled ? "Spoken alerts enabled" : "Spoken alerts disabled",
+          enabled ? "New high/critical findings and SOC alerts can be spoken." : "Dashboard alerts will stay silent.", "info", 2500);
+      }
+    } });
+    const readDashboardButton = el("button", { class: "btn ghost sm", text: "🔊 Read dashboard", onClick: () => {
+      if (!voice.isVoiceEnabled()) {
+        toast("Voice output is disabled", "Enable Voice output in Settings first.", "warn");
+        return;
+      }
+      voice.speak(dashboardSpeechText(latestDashboardData));
+    } });
+    renderDashboardAlertButtons();
+    const alertControls = el("div", { class: "dash-alert-controls", style: { display: "flex", gap: "6px", flexWrap: "wrap", justifyContent: "flex-end" } },
+      soundToggle, announceToggle, readDashboardButton
+    );
+    c.appendChild(viewHead("Command Center", "Live platform posture · updates every 15 seconds", [alertControls]));
 
     /* Defer the heavy real-Earth texture until the dashboard has painted. */
     const realEarth = document.querySelector(".liquid-backdrop .earth-backdrop");
@@ -317,6 +450,127 @@ async function dashboardView(container, ctx) {
       } catch (_) { /* mini map is optional and never blocks initial display */ }
     })();
   }, "Loading command center…");
+
+  dashboardRefreshTimer = window.setInterval(async () => {
+    if (!container.isConnected || window.location.hash !== "#dashboard") {
+      window.clearInterval(dashboardRefreshTimer);
+      dashboardRefreshTimer = null;
+      return;
+    }
+    if (refreshInFlight || !latestDashboardData) return;
+    refreshInFlight = true;
+    try {
+      const next = await endpoints.dashboard();
+      const freshFindings = (next.recent_findings || []).filter((f) => !seenFindingIds.has(f.id));
+      const freshEvents = (next.recent_soc_events || []).filter((e) => !seenSocIds.has(e.id));
+      (next.recent_findings || []).forEach((f) => seenFindingIds.add(f.id));
+      (next.recent_soc_events || []).forEach((e) => seenSocIds.add(e.id));
+      latestDashboardData = next;
+      updateDashboardSnapshot(next, ctx);
+
+      const findingAlerts = freshFindings.filter((f) => ["critical", "high", "medium"].includes(normSev(f.severity)));
+      const eventAlerts = freshEvents.filter((e) =>
+        ["critical", "high"].includes(normSev(e.severity)) &&
+        !["vulnerability_detected", "finding_recorded", "scan_completed", "scan_failed"].includes((e.event_type || "").toLowerCase())
+      );
+      if ((findingAlerts.length || eventAlerts.length) && dashboardPreference(DASHBOARD_SOUND_KEY)) {
+        playDashboardAlertTone();
+      }
+      const spokenAlerts = [
+        ...findingAlerts.filter((f) => ["critical", "high"].includes(normSev(f.severity)))
+          .map((f) => `${normSev(f.severity)} finding: ${f.title}`),
+        ...eventAlerts.map((e) => `${normSev(e.severity)} SOC alert: ${e.message}`)
+      ].slice(0, 4);
+      if (spokenAlerts.length && dashboardPreference(DASHBOARD_ANNOUNCE_KEY) && voice.isVoiceEnabled()) {
+        voice.speak("New NexCYR security alert. " + spokenAlerts.join(". "));
+      }
+    } catch (_) {
+      // Keep the last real snapshot visible during a temporary API failure.
+    } finally {
+      refreshInFlight = false;
+    }
+  }, 15000);
+}
+
+function updateDashboardSnapshot(d, ctx) {
+  const c = d.counts || {};
+  const values = {
+    "Assessments": [c.assessments, "total", "info"],
+    "Authorized Targets": [c.authorized_targets, `${c.targets || 0} total · ${c.active_targets || 0} active`, "info"],
+    "Scans": [c.scans, "recorded", "info"],
+    "Open Findings": [c.open_findings, `${c.findings || 0} total`, c.open_findings ? "warn" : "good"],
+    "Critical": [c.critical_findings, "findings", c.critical_findings ? "crit" : "good"],
+    "High": [c.high_findings, "findings", c.high_findings ? "crit" : "good"],
+    "SOC Alerts": [c.open_soc_alerts, `${c.soc_alerts || 0} total`, c.open_soc_alerts ? "warn" : "good"],
+    "Purple Team": [c.purple_team_tests, `${d.purple_team?.detected || 0} detected · ${d.purple_team?.missed || 0} missed`, "info"]
+  };
+  document.querySelectorAll("#dashMetrics .metric").forEach((card) => {
+    const value = values[card.dataset.dashboardMetric || card.querySelector(".k")?.textContent];
+    if (!value) return;
+    const number = card.querySelector(".v");
+    const note = card.querySelector(".n");
+    if (number) number.textContent = String(value[0] ?? 0);
+    if (note) note.textContent = value[1] || "";
+    card.className = `metric ${value[2] || ""}`;
+  });
+
+  const riskBody = document.getElementById("dashRiskBody");
+  if (riskBody) {
+    riskBody.innerHTML = "";
+    if (d.risk?.has_data) {
+      riskBody.appendChild(el("div", { class: "risk-hero" }, gauge(d.risk.score, d.risk.level),
+        el("div", { style: { flex: "1" } },
+          el("div", { class: "section-title", text: "Severity Distribution" }),
+          sevBars(d.risk.severity_distribution))));
+    } else {
+      riskBody.appendChild(el("div", { class: "state" },
+        el("div", { class: "big", text: "NO RECORDED SECURITY FINDINGS" }),
+        el("div", { class: "sm", text: d.risk?.empty_message || "Create findings to populate risk posture." })));
+    }
+  }
+  const findingsBody = document.getElementById("dashRecentFindingsBody");
+  if (findingsBody) {
+    findingsBody.innerHTML = "";
+    findingsBody.appendChild((d.recent_findings || []).length
+      ? el("div", { class: "feed" }, d.recent_findings.map((f) =>
+          feedRow("⚠", f.title, `${sevText(f.severity)} · ${f.status} · ${fmtDate(f.created_at)}`, normSev(f.severity), () => ctx.navigate("findings"))))
+      : emptyState("No findings yet", "Findings appear here once recorded."));
+  }
+  const socBody = document.getElementById("dashRecentSocBody");
+  if (socBody) {
+    socBody.innerHTML = "";
+    socBody.appendChild((d.recent_soc_events || []).length
+      ? el("div", { class: "feed" }, d.recent_soc_events.map((e) =>
+          feedRow("◉", e.message, `${e.event_type} · ${sevText(e.severity)} · ${fmtDate(e.created_at)}`, normSev(e.severity), () => ctx.navigate("soc"))))
+      : emptyState("No SOC events", "Recorded security events appear here."));
+  }
+  const correlationBody = document.getElementById("dashCorrelationBody");
+  if (correlationBody) {
+    correlationBody.innerHTML = "";
+    correlationBody.appendChild((d.correlation?.clusters || []).length
+      ? el("div", { class: "feed" }, d.correlation.clusters.map((cl) =>
+          feedRow("⧉", `${cl.category.replace(/_/g, " ")} cluster`, `${cl.event_count} event(s) · max severity ${sevText(cl.max_severity)} · ${cl.assessment || "platform"}`, normSev(cl.max_severity), () => ctx.navigate("soc"))))
+      : emptyState("NO CORRELATED ACTIVITY", "Correlation runs on stored SOC events."));
+  }
+  const activityBody = document.getElementById("dashRecentActivityBody");
+  if (activityBody) {
+    activityBody.innerHTML = "";
+    activityBody.appendChild((d.recent_activity || []).length
+      ? el("div", { class: "feed" }, d.recent_activity.map((a) =>
+          feedRow(a.kind === "finding" ? "⚠" : "◉", a.label, `${a.kind.replace("_", " ")} · ${sevText(a.severity)} · ${fmtDate(a.at)}`, normSev(a.severity))))
+      : emptyState("No activity yet"));
+  }
+  const agentsBody = document.getElementById("dashAgentsBody");
+  if (agentsBody) {
+    agentsBody.innerHTML = "";
+    agentsBody.appendChild((d.agents || []).length
+      ? el("div", { class: "feed" }, d.agents.slice(0, 6).map((a) => feedRow(
+          "⬢", `${a.name}${a.version ? " v" + a.version : ""}`,
+          `${a.agent_key} · ${a.status} · seen ${a.last_seen_seconds_ago != null ? agoLabel(a.last_seen_seconds_ago) : "never"}${a.nmap_available ? " · nmap" : ""}`,
+          a.status === "online" ? "low" : a.status === "degraded" ? "medium" : "info",
+          () => ctx.navigate("agents"))))
+      : emptyState("NO NEXCYR AGENTS", "Cloud Scanner is active. Register an agent to scan from inside a target network."));
+  }
 }
 
 function sevText(s) { return (s || "info").toLowerCase(); }

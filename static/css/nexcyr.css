@@ -2686,3 +2686,17 @@ body, .app, a, button, input, select, textarea, .clickable {
   justify-content: flex-end;
   margin-top: 5px;
 }
+
+/* Hide Earth-only image credit text; do not affect the globe or dashboard panels. */
+.liquid-backdrop .earth-source,
+.liquid-backdrop .earth-credit,
+.liquid-backdrop .image-source,
+.liquid-backdrop .image-credit,
+.liquid-backdrop .source-credit,
+.liquid-backdrop .earth-attribution,
+.liquid-backdrop [data-earth-source],
+.liquid-backdrop .earth-backdrop figcaption,
+.liquid-backdrop .earth-backdrop [class*="attribution"],
+.liquid-backdrop .earth-backdrop [class*="credit"] {
+  display: none !important;
+}
