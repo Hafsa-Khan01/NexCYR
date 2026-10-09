@@ -2554,3 +2554,67 @@ body, .app, a, button, input, select, textarea, .clickable {
     transform: translate(-50%, -50%) !important;
   }
 }
+
+/* Requested final layout: globe stays on the AI / Operator / Scan / SOC side;
+   the soft black fade sits by the left menu rail instead of covering the globe. */
+.liquid-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(0,0,0,0.92) 0%,
+    rgba(0,0,0,0.70) 12%,
+    rgba(0,0,0,0.36) 25%,
+    rgba(0,0,0,0.10) 37%,
+    transparent 44%
+  );
+}
+
+@media (min-width: 781px) {
+  .liquid-backdrop .earth-backdrop.real-earth {
+    left: auto !important;
+    right: -5vw !important;
+    top: 50% !important;
+    width: min(55vw, 720px) !important;
+    height: min(55vw, 720px) !important;
+    transform: translateY(-50%) !important;
+    z-index: 0 !important;
+  }
+}
+
+/* Keep the globe itself clear; the dark fade belongs on the menu-bar side. */
+.liquid-backdrop .earth-backdrop.real-earth::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Cleaner skull cursor: separated sockets, bright cyan eyes, small nose, neat teeth. */
+:root {
+  --skull-cursor: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%220%200%2040%2040%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22glow%22%20x%3D%22-80%25%22%20y%3D%22-80%25%22%20width%3D%22260%25%22%20height%3D%22260%25%22%3E%3CfeGaussianBlur%20stdDeviation%3D%221.1%22%20result%3D%22b%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22b%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M20%203.2C11.2%203.2%205.7%209.4%205.7%2017.1c0%205.2%202.5%208.9%206.2%2010.9v4.1c0%201.3%201%202.3%202.3%202.3h11.6c1.3%200%202.3-1%202.3-2.3V28c3.7-2%206.2-5.7%206.2-10.9C34.3%209.4%2028.8%203.2%2020%203.2Z%22%20fill%3D%22%23050812%22%20fill-opacity%3D%22.94%22%20stroke%3D%22%2322e0ff%22%20stroke-width%3D%221.5%22%2F%3E%3Cpath%20d%3D%22M9.7%2015.4c.4-3%202.2-4.8%204.7-4.8%202.1%200%203.5%201.1%204.3%203-.2%203.6-2.1%206.2-4.7%206.2-2.6%200-4.5-1.7-4.3-4.4Z%22%20fill%3D%22%23030611%22%20stroke%3D%22%239b6bff%22%20stroke-width%3D%221.5%22%2F%3E%3Cpath%20d%3D%22M30.3%2015.4c-.4-3-2.2-4.8-4.7-4.8-2.1%200-3.5%201.1-4.3%203%20.2%203.6%202.1%206.2%204.7%206.2%202.6%200%204.5-1.7%204.3-4.4Z%22%20fill%3D%22%23030611%22%20stroke%3D%22%239b6bff%22%20stroke-width%3D%221.5%22%2F%3E%3Cg%20filter%3D%22url(%23glow)%22%3E%3Cellipse%20cx%3D%2214.6%22%20cy%3D%2215.1%22%20rx%3D%221.65%22%20ry%3D%222.1%22%20fill%3D%22%2322e0ff%22%20stroke%3D%22%2322e0ff%22%20stroke-width%3D%22.7%22%2F%3E%3Cellipse%20cx%3D%2225.4%22%20cy%3D%2215.1%22%20rx%3D%221.65%22%20ry%3D%222.1%22%20fill%3D%22%2322e0ff%22%20stroke%3D%22%2322e0ff%22%20stroke-width%3D%22.7%22%2F%3E%3C%2Fg%3E%3Cpath%20d%3D%22M20%2019.8%2017.7%2023h4.6L20%2019.8Z%22%20fill%3D%22%23e11d8f%22%20stroke%3D%22%2322e0ff%22%20stroke-width%3D%22.85%22%2F%3E%3Cpath%20d%3D%22M12.8%2025.4c2%201.3%204.4%202%207.2%202s5.2-.7%207.2-2%22%20fill%3D%22none%22%20stroke%3D%22%2322e0ff%22%20stroke-width%3D%221.25%22%2F%3E%3Cpath%20d%3D%22M13%2029.2v3.9M16.5%2029.6v3.8M20%2029.7v3.8M23.5%2029.6v3.8M27%2029.2v3.9%22%20fill%3D%22none%22%20stroke%3D%22%239b6bff%22%20stroke-width%3D%221.2%22%2F%3E%3Cpath%20d%3D%22M9%2022.7%2012%2024M31%2022.7%2028%2024%22%20fill%3D%22none%22%20stroke%3D%22%2322e0ff%22%20stroke-width%3D%221%22%20opacity%3D%22.75%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 10 8, auto;
+}
+body, .app, a, button, input, select, textarea, .clickable {
+  cursor: var(--skull-cursor) !important;
+}
+
+@media (max-width: 780px) {
+  .liquid-backdrop::before {
+    background: linear-gradient(
+      90deg,
+      rgba(0,0,0,0.80) 0%,
+      rgba(0,0,0,0.46) 22%,
+      rgba(0,0,0,0.10) 39%,
+      transparent 48%
+    );
+  }
+  .liquid-backdrop .earth-backdrop.real-earth {
+    left: 66% !important;
+    right: auto !important;
+    top: 52% !important;
+    width: 88vmin !important;
+    height: 88vmin !important;
+    transform: translate(-50%, -50%) !important;
+  }
+}
